@@ -11,7 +11,7 @@ Basic Setup
 
 2. Install [graphviz](http://graphviz.org/Download..php)
 
-3. Compile the extranal libraries by running
+3. Compile the extranal libraries by running (optional)
 
         make -C ./external/eba
         make -C ./external/ecba

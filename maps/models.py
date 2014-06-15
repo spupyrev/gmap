@@ -39,4 +39,14 @@ class Task(models.Model):
 
     def json_metadata(self):
         return dumps(self.metadata())
+
+    def description(self):
+        desc = ''
+        desc += 'Visualization Type: ' + self.vis_type + '\n'
+        desc += 'Layout Algorithm: ' + self.layout_algorithm + '\n'
+        desc += 'Cluster Algorithm: ' + self.cluster_algorithm + '\n'
+        desc += 'Color Scheme: ' + self.color_scheme + '\n'
+        desc += 'Semantic Zoom: ' + self.semantic_zoom + '\n'
+        return desc
+
         

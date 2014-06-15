@@ -109,7 +109,9 @@ def call_graphviz_int(task):
     	return dot_out, svg_out
     elif vis_type == 'gmap':
     	#default pipeline
+    	#log.debug('RInput: %s' %(map_string))
     	dot_out = run_layout(task, layout_algorithm, map_string)
+    	#log.debug('WInput: %s' %(dot_out))
     	dot_out = run_clustering(task, cluster_algorithm, dot_out)
 
     	set_status(task, 'map construction')

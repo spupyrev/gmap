@@ -2,3 +2,4 @@
 *.db
 *.o
 *.exe
+logfile.txt

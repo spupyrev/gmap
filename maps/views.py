@@ -23,19 +23,26 @@ def about(request):
 def recent(request):
 	map_list = []
 
-	for task in Task.objects.order_by('-id')[:25]:
+	debug = request.GET.get('debug', 'false')
+	page = int(request.GET.get('page', '0'))
+	items_per_page = 30
+	start = items_per_page*page
+	end = start + items_per_page
+
+	for task in Task.objects.order_by('-id')[start:end]:
 		obj = {}
 		obj['id'] = task.id
 		obj['link'] = '/map/' + str(task.id)
-		if len(task.input_dot) < 80:
+		if len(task.input_dot) < 75:
 			obj['dot'] = task.input_dot
 		else:
-			obj['dot'] = task.input_dot[:80] + '...'
+			obj['dot'] = task.input_dot[:75] + '...'
 		obj['dot_link'] = '/map/' + str(task.id) + '/input_dot'
 		obj['date'] = task.creation_date
 		obj['ip'] = task.creation_ip
+		obj['status'] = task.status
+		obj['status_link'] = '/map/' + str(task.id) + '/input_desc'
 		map_list.append(obj)
-	debug = request.GET.get('debug', 'false')
 	return render(request, 'maps/recent.html', {'map_list': map_list, 'debug': debug})
 
 
@@ -75,6 +82,8 @@ def display_map(request, task_id, format = ''):
 				return HttpResponse(content, content_type = MIME_TYPES[format])
 			elif format == 'input_dot':
 				return HttpResponse(task.input_dot, 'text/plain')
+			elif format == 'input_desc':
+				return HttpResponse(task.description(), 'text/plain')
 
 def get_task_metadata(request, task_id):
     if request.method == 'GET':

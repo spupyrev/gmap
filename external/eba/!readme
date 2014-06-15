@@ -1,0 +1,9 @@
+Usage: 
+
+#k-means clustering
+#example: main -action=clustering -o=out.gv -K=20 -C=geometrickmeans sample.gv
+main -action=clustering -o=<outputfile> -K=<number of clusters> -C=<type of clustering> <graphfile>
+
+#compute metrics
+#example: main -action=metrics sample.gv
+main -action=metrics <graphfile>

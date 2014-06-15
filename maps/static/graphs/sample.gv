@@ -1,0 +1,14 @@
+graph {
+  "0" [cluster="3", label="Drawing", pos="26.163,130.97"];
+  "1" [cluster="3", label="Visualization", pos="270.82,243.14"];
+  "2" [cluster="2", label="Graph", pos="271.43,16.263"];
+  "3" [cluster="2", label="Arizona", pos="670.15,16.263"];
+  "4" [cluster="2", label="University", pos="415.11,16.263"];
+  "5" [cluster="1", label="Map", pos="513.44,131.26"];
+  "0" -- "1";
+  "1" -- "2";
+  "0" -- "2";
+  "3" -- "4";
+  "5" -- "1";
+  "5" -- "2";
+}

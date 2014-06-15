@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+    <head>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<meta name="title" content="Web-GMap">
+		<meta name="keywords" content="graph drawing, graph visualization, map, gmap, generator, graphviz, online, graphs as maps">
+		<meta name="description" content="GMap is an algorithm that turns underlying graph structural information, clustering, and neighborhoods into geographic maps, which are intuitive to most people.">
+
+        <title>{% block title %}Web-GMap{% endblock %}</title>
+
+		<link type="image/ico" rel="shortcut icon" href="{% get_static_prefix%}/img/favicon.ico" />
+        <link href="{% get_static_prefix%}css/bootstrap.css" rel="stylesheet">
+
+        {% block js %}
+        {% endblock %}
+    </head>
+
+    <body>
+		<div id="header" class="navbar navbar-static-top">
+			<div class="navbar-inner">
+				<ul class="nav">
+					<li><a href="{% url 'maps:index' %}">Home</a></li>
+					<li><a href="{% url 'maps:description' %}">Description</a></li>
+					<li><a href="{% url 'maps:datasets' %}">Datasets</a></li>
+					<li><a href="{% url 'maps:about' %}">About Us</a></li>
+				</ul>
+			</div>
+		</div>
+
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+    <div id="content">{% block content %}{% endblock %}</div>
+</body>
+</html>

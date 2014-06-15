@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ block.super }} :: About{% endblock %}
+
+{% block js %}
+{% load static %}
+{% endblock %}
+
+{% block content %}
+	<div class="description" style="text-align:center;">
+		<h2 style="text-align:center">People behind the system</h2>
+		<div class='row'>
+			<div class='photo'>
+				<a href="http://www.cs.arizona.edu/~kobourov/">
+				<img src="{% get_static_prefix %}photos/stephen.jpg" class="img-about" /></a><br>
+				Stephen Kobourov
+			</div>
+			<div class='about-info'>
+			Stephen Kobourov is a Professor of Computer Science at the University of Arizona. 
+			He works on graph drawing and information visualization, geometric algorithms and data
+			 structures, human computer interaction, and pervasive computing.</div>
+		</div>
+
+		<div class='row'>
+			<div class='photo'>
+				<a href="http://www.cs.arizona.edu/~jfowler">
+					<img src="{% get_static_prefix %}photos/joe.jpg" class="img-about" /></a><br>
+				Joe Fowler
+			</div>
+
+			<div class='about-info'>Joe is a post-doc at the University of Arizona. His main research interests include graph drawing and 
+			visualization, computational geometry, sensor networks, and graph-based algorithms.</div>
+		</div>
+
+		<div class='row'>
+			<div class='photo'>
+				<a href="http://www.cs.arizona.edu/~spupyrev/">
+					<img src="{% get_static_prefix %}photos/sergey.jpg" class="img-about" /></a><br>
+				Sergey Pupyrev
+			</div>
+
+			<div class='about-info'>Sergey Pupyrev is a post-doc at the University of Arizona.
+			 He works on graph drawing and graph algorithms.</div>
+		</div>
+
+		<div class='row'>
+			<div class='photo'>
+				<a href="http://www.cs.arizona.edu/~paolosimonetto">
+					<img src="{% get_static_prefix %}photos/paolo.jpg" class="img-about" /></a><br>
+				Paolo Simonetto
+			</div>
+
+			<div class='about-info'>Paolo Simonetto is a post-doc at the University of Arizona.
+			His current research interests are graph drawing and the generation of maps and diagrams.
+			</div>
+		</div>
+	</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+BEG_G { 
+  double x0[int], y0[int], w0[int], h0[int], key[int], key0, x[int], y[int], half = 0.4; 
+  double fsz, w, h, xx, yy, factor=1; 
+  double gw, gh, gxmin, gxmax, gymin, gymax;
+  int i=0, j=0, n, hit=0, nnode=0, success = 1, lnodes = 0, id[int], id0, lid[int], w2, h2; 
+  graph_t g = graph ("merge", "S");
+  node_t nodes[int], node0;
+
+  if (ARGC > 0) sscanf (ARGV[0],"%f", &factor);
+
+}
+
+N {
+  
+  sscanf ($.importance,"%f", &key0); 
+  sscanf ($.width,"%f", &w); 
+  sscanf ($.height,"%f", &h); 
+  sscanf ($.pos,"%f,%f", &xx, &yy); 
+  w0[j] =72*w; h0[j] =72*h; x0[j] = xx; y0[j] = yy; nodes[j] = $; key[j] = key0; id[j] = j;
+  j++;
+}
+
+END_G {
+  n = j;
+  while (success == 1){
+    success = 0;
+    for (i = 0; i < n - 1; i++){
+      if (key[i] < key[i+1]){
+	success = 1;
+	key0 = key[i]; id0 = id[i];
+	key[i] = key[i+1]; id[i] = id[i+1];
+	key[i+1] = key0; id[i+1] = id0;
+      }
+    }
+  }
+  for (j = 0; j < n; j++){
+    id0 = id[j]; node0 = nodes[id0]; xx = x0[id0]; yy = y0[id0]; w = w0[id0]; h = h0[id0];
+    hit = 0;
+    for (i = 0; i < lnodes; i++){
+      w2 = w0[lid[i]]; h2 = h0[lid[i]];
+      if (!(xx + factor*w*half < x[i] -  factor*w2*half || xx - factor*w*half > x[i] + factor*w2*half 
+	  || yy + factor*h*half < y[i] - factor*h2*half || yy - factor*h*half > y[i] + factor*h2*half)) {
+        hit = 1; break;
+      }
+    }
+    if (hit == 0) {
+      x[lnodes] = xx;
+      y[lnodes] = yy;
+      lid[lnodes] = id0;
+      lnodes++;
+      sscanf (node0.fontsize,"%f", &fsz); 
+      if (fsz <= 0.1) fsz = 18.0;
+      node0.fontsize = fsz*factor;
+    } else {
+      node0.label="\\N"; node0.style="invis";
+    }
+  }
+  $O = g;
+}
+

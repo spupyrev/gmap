@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}{{ block.super }} :: Datasets{% endblock %}
+
+{% block js %}
+{% load static %}
+{% endblock %}
+
+{% block content %}
+	<div class="datasets">
+		<h3 style="text-align:center">Graph datasets</h2>
+
+		<p style="text-align:justify">What follows is a collection of graphs and networks used in our experiments and evaluations. 
+		The graphs are in the <a href="http://www.graphviz.org/Documentation.php">dot</a> format.</p>
+
+		<table align="center"><tbody>
+		<tr>
+			<th width="15%">dataset</td>
+			<th width="65%">description</th>
+			<th width="20%">source</th>
+		</tr>
+		<tr>
+			<td><a href="{% get_static_prefix %}media/recipes.gv">Recipes</a></td>
+			<td>
+				Recipe-ingredients contain 381 unique cooking ingredients extracted from 56498 cooking recipes.
+				Edges are weighted based on co-occurrence of the ingredients in the recipes.
+			</td>
+			<td><a href="http://www.nature.com/srep/2011/111215/srep00196/full/srep00196.html">Ahn et al., 2011</a></td>
+		</tr>
+		<tr>
+			<td><a href="{% get_static_prefix %}media/gd.gv">GD collaboration</a></td>
+			<td>
+				Co-authorship graph for the International Symposiums on Graph Drawing, 1994-2007.
+				The vertices represent the authors and an edge is between two vertices if the corresponding authors published a paper together.
+			</td>
+			<td><a href="http://www.graphdrawing.de/contest2010/index.html">Graph Drawing Contest 2010</a></td>
+		</tr>
+		<tr>
+			<td><a href="{% get_static_prefix %}media/trade.gv">Trade</a></td>
+			<td>
+				The network contains trade relationships between 211
+				countries. Edges are weighted based on normalized combined import/export between pairs of countries.
+			</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td><a href="{% get_static_prefix %}media/colors.gv">Colors</a></td>
+			<td>
+				The graph is constructed using the 954 most common RGB monitor colors, as defined by several 
+				hundred thousand participants in the xkcd color name survey.
+				The edge-weights are defined by the distance in the RGB space between corresponding pairs.
+			</td>
+			<td><a href="http://xkcd.com/color/rgb">xkcd.com</a></td>
+		</tr>
+		<tr>
+			<td><a href="{% get_static_prefix %}media/books.gv">Books</a></td>
+			<td>The network of 3204 popular books.
+			The edges are obtained with a breadth-first traversal following Amazon's "Customers Who Bought This Item Also Bought" links,
+			starting from the root node, George Orwell's 1984.</td>
+			<td><a href="http://www.cs.arizona.edu/~kobourov/pacvis10.pdf">Gansner et al., 2010</a></td>
+		</tr>
+		<tr>
+			<td><a href="{% get_static_prefix %}media/lastfm.gv">LastFM</a></td>
+			<td>The network of 2588 popular bands and musicians crawled from the last.fm system. The edges correspond to 
+			similarities between the musicians, as suggested by last.fm.</td>
+			<td><a href="http://www.cs.arizona.edu/~kobourov/recsys09.pdf">Gansner et al., 2009</a></td>
+		</tr>
+		<tr>
+			<td><a href="{% get_static_prefix %}media/univ.gv">Universities</a></td>
+			<td>Network of US universities and their average SAT scores. The vertices are universities and
+			edges are constructed based on their similarities of the admissions data.</td>
+			<td><a href="http://www.amazon.com/Fiske-Guide-Colleges-2013-29E/dp/1402209630">Fiske Guide to Colleges</a></td>
+		</tr>
+		<tr>
+			<td><a href="{% get_static_prefix %}media/mocs-algo.gv">ALGO</a></td>
+			<td>The network of topics of research papers published in Algorithmica, 1950-2013.
+			The graph contains the prominent words and phrases extracted from the titles of the papers.
+			The edges represent similarities between the topics computed based on their co-occurrence in titles.</td>
+			<td><a href="http://mocs.cs.arizona.edu">MoCS</a></td>
+		</tr>
+		<tr>
+			<td><a href="{% get_static_prefix %}media/mocs-ipl.gv">IPL</a></td>
+			<td>The network of topics of research papers published in Inf. Process. Lett., 1950-2013.
+			The graph contains the prominent words and phrases extracted from the titles of the papers.
+			The edges represent similarities between the topics computed based on their co-occurrence in titles.</td>
+			<td><a href="http://mocs.cs.arizona.edu">MoCS</a></td>
+		</tr>
+		<tr>
+			<td><a href="{% get_static_prefix %}media/mocs-socg.gv">SOCG</a></td>
+			<td>The network of topics of research papers published in the Symposium on Computational Geometry, 1950-2013.
+			The graph contains the prominent words and phrases extracted from the titles of the papers.
+			The edges represent similarities between the topics computed based on their co-occurrence in titles.</td>
+			<td><a href="http://mocs.cs.arizona.edu">MoCS</a></td>
+		</tr>
+		<tr>
+			<td><a href="{% get_static_prefix %}media/mocs-soda.gv">SODA</a></td>
+			<td>The network of topics of research papers published in the Symposium on Discrete Algorithms, 1950-2013.
+			The graph contains the prominent words and phrases extracted from the titles of the papers.
+			The edges represent similarities between the topics computed based on their co-occurrence in titles.</td>
+			<td><a href="http://mocs.cs.arizona.edu">MoCS</a></td>
+		</tr>
+		<tr>
+			<td><a href="{% get_static_prefix %}media/mocs-tarjan.gv">TARJAN</a></td>
+			<td>The network of topics of research papers published by Robert Endre Tarjan.
+			The graph contains the prominent words and phrases extracted from the titles of the papers.
+			The edges represent similarities between the topics computed based on their co-occurrence in titles.</td>
+			<td><a href="http://mocs.cs.arizona.edu">MoCS</a></td>
+		</tr>
+		</tbody></table>
+
+	</div>
+{% endblock %}

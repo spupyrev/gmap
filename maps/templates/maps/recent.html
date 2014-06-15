@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ block.super }} :: Recent maps{% endblock %}
+
+{% block js %}
+{% load static %}
+{% endblock %}
+
+{% block content %}
+	<div class="description">
+		<h2 style="text-align:center">Recently Created Maps</h2>
+
+		<table class="latest">
+			<tbody>
+				<tr>
+					<td width="10%" align="center"><b>id</b></td>
+					<td width="{% if debug = 'true' %}20%{% else %}25%{% endif %}" align="center"><b>creation date</b></td>
+					<td width="{% if debug = 'true' %}60%{% else %}65%{% endif %}" align="center"><b>source</b></td>
+					{% if debug = 'true' %}<td width="10%" align="center"><b>ip</b></td>{% endif %}
+				</tr>
+
+				{% for obj in map_list %}
+			    <tr>
+			    	<td><a href="{{obj.link}}">{{ obj.id }}</a></td>
+					<td>{{ obj.date }}</td>
+					<td align="left"><a href="{{obj.dot_link}}">{{ obj.dot }}</a></td>
+					{% if debug = 'true' %}<td align="center">{{ obj.ip }}{% endif %}
+			    </tr>
+				{% endfor %}
+
+			</tbody>
+		</table>
+
+	</div>
+{% endblock %}

@@ -10,7 +10,10 @@ log = logging.getLogger('gmap_web')
 
 import os
 CURPATH = os.path.dirname(__file__)
-CURPATH = os.path.join(CURPATH, os.pardir)
+CURPATH = os.path.normpath(os.path.join(CURPATH, os.pardir))
+if CURPATH.startswith('/cygdrive'):
+	path = CURPATH.split('/')
+	CURPATH = path[2] + ":/" + "/".join(path[3:])
 
 def graphviz_command_layout(alg='sfdp'):
     return "%s -Goverlap=prism -Goutputorder=edgesfirst -Gsize=60,60!" % (alg)
@@ -24,8 +27,7 @@ def graphviz_command_draw(file_format='svg'):
     return "neato -Gforcelabels=false -Ecolor=grey  -Gsize=60,60! -n2 -T%s" % (file_format)
 
 def graphviz_command_scale(s1, s2):
-    script = "/var/www/zuni/html/gmap/django_site/external/utils/change_size.gvpr"
-    #script = CURPATH + "/external/utils/change_size.gvpr"
+    script = CURPATH + "/external/utils/change_size.gvpr"
     return "gvpr -c -a %s -f %s | neato -Gsize=%s! -Ecolor=grey -n2 -Tsvg" % (s1, script, s2)
 
 def cluster_command(alg):
@@ -35,18 +37,15 @@ def ceba_command():
     return "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:" + CURPATH + "/external/ecba/libraries/tulip/install/lib; " + CURPATH + "/external/ecba/build/Exec -p -r"
 
 def bubblesets_command():
-    script = "e:/Research/Arizona/gmap/system/gmap_web/external/BubbleSets.jar"
-    #script = "/var/www/zuni/html/gmap/django_site/external/BubbleSets.jar"
+    script = CURPATH + "/external/BubbleSets.jar"
     return "java -cp " + script + " setvis.Main -p -r"
     
 def colors_command():
-    script = "e:/Research/Arizona/gmap/system/gmap_web/external/BubbleSets.jar"
-    #script = "/var/www/zuni/html/gmap/django_site/external/BubbleSets.jar"
+    script = CURPATH + "/external/BubbleSets.jar"
     return "java -cp " + script + " setvis.Main -p -r -c"
     
 def linesets_command():
-    script = "e:/Research/Arizona/gmap/system/gmap_web/external/LineSets.jar"
-    #script = "/var/www/zuni/html/gmap/django_site/external/LineSets.jar"
+    script = CURPATH + "/external/LineSets.jar"
     return "java -cp " + script + " setvis.Main -p -r"
     
 

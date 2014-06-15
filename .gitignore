@@ -3,3 +3,4 @@
 *.o
 *.exe
 logfile.txt
+timing_greedy

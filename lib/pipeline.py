@@ -48,6 +48,14 @@ def linesets_command():
     script = CURPATH + "/external/LineSets.jar"
     return "java -cp " + script + " setvis.Main -p -r"
     
+def mapsets_command():
+    return CURPATH + "/external/mapsets/mapsets"
+    
+def mapsets_post_command(color_scheme):
+    if color_scheme == 'bubble-sets':
+    	return "gvmap -e -a 0 -s 200"
+    return "gvmap -e -a 0 -s 200 -c %s" % (color_scheme)
+
 
 def removeNonAscii(s): return "".join(i for i in s if ord(i)<128)
 
@@ -86,7 +94,7 @@ def run_clustering(task, cluster_algorithm, dot_out):
 	elif cluster_algorithm == 'modularity':
 		return call_process(graphviz_command_gmap(task.color_scheme), dot_out)
 	elif cluster_algorithm == 'cont-modularity':
-		dot_out = call_process(cluster_command('graphhierarchical'), dot_out)
+		dot_out = call_process(graphviz_command_gmap(task.color_scheme), dot_out)
 		set_status(task, 'making map contiguous')
 		return call_process(ceba_command(), dot_out)
 
@@ -108,9 +116,7 @@ def call_graphviz_int(task):
     	return dot_out, svg_out
     elif vis_type == 'gmap':
     	#default pipeline
-    	#log.debug('RInput: %s' %(map_string))
     	dot_out = run_layout(task, layout_algorithm, map_string)
-    	#log.debug('WInput: %s' %(dot_out))
     	dot_out = run_clustering(task, cluster_algorithm, dot_out)
 
     	set_status(task, 'map construction')
@@ -118,7 +124,6 @@ def call_graphviz_int(task):
     	#log.debug('Input: %s' %(dot_out))
     	if task.color_scheme == 'bubble-sets':
     		dot_out = run_color_assignment(task, dot_out)
-   		#log.debug('Output: %s' %(dot_out))
 
     	svg_out = get_graphviz_map(dot_out, 'svg')
     	return dot_out, svg_out
@@ -145,6 +150,17 @@ def call_graphviz_int(task):
 
     	set_status(task, 'creating line sets')
     	dot_out = call_process(linesets_command(), dot_out)
+
+    	svg_out = get_graphviz_map(dot_out, 'svg')
+    	return dot_out, svg_out
+
+    elif vis_type == 'map-sets':
+    	dot_out = run_layout(task, layout_algorithm, map_string)
+    	dot_out = run_clustering(task, 'cont-modularity', dot_out)
+
+    	set_status(task, 'creating map sets')
+    	dot_out = call_process(mapsets_command(), dot_out)
+    	dot_out = call_process(mapsets_post_command(task.color_scheme), dot_out)
 
     	svg_out = get_graphviz_map(dot_out, 'svg')
     	return dot_out, svg_out

@@ -11,13 +11,16 @@ struct Metrics
 {
 	int n, m, c;
 
-	double mdsStress;
-	double stress;
+	double sparseStress;
+	double fullStress;
 	double distortion;
 	double neigPreservation;
 	double compactness;
 	double uniform;
 	double aspectRatio;
+	double crossings;
+	double minCrossAngle;
+	double avgCrossAngle;
 
 	double modularity;
 	double coverage;
@@ -25,13 +28,17 @@ struct Metrics
 
 	Metrics()
 	{
-		mdsStress = UNDEF;
-		stress = UNDEF;
+		sparseStress = UNDEF;
+		fullStress = UNDEF;
 		distortion = UNDEF;
 		neigPreservation = UNDEF;
 		compactness = UNDEF;
 		uniform = UNDEF;
 		aspectRatio = UNDEF;
+		crossings = UNDEF;
+		minCrossAngle = UNDEF;
+		avgCrossAngle = UNDEF;
+
 		modularity = UNDEF;
 		coverage = UNDEF;
 		conductance = UNDEF;
@@ -40,13 +47,16 @@ struct Metrics
 	void outputLayout() const
 	{
 		printf("|V| = %d   |E| = %d   |C| = %d\n", n, m, c);
-		printf("MDS Stress:                 %s\n", safeString(mdsStress).c_str());
-		printf("Graph-theoretic Stress:     %s\n", safeString(stress).c_str());
+		printf("Sparse-Stress:              %s\n", safeString(sparseStress).c_str());
+		printf("Full-Stress:                %s\n", safeString(fullStress).c_str());
 		printf("Distortion:                 %s\n", safeString(distortion).c_str());
 		printf("Neighborhood Preservation:  %s\n", safeString(neigPreservation).c_str());
 		//printf("Compactness:                %s\n", safeString(compactness).c_str());
 		printf("Uniform Area Utilization:   %s\n", safeString(uniform).c_str());
 		printf("Aspect Ratio:               %s\n", safeString(aspectRatio).c_str());
+		printf("Crossings:                  %s\n", safeString(crossings).c_str());
+		printf("Min-CrossAngle:             %s\n", safeString(minCrossAngle).c_str());
+		printf("Avg-CrossAngle:             %s\n", safeString(avgCrossAngle).c_str());
 	}
 
 	void outputCluster() const

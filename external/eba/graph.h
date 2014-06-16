@@ -1,9 +1,8 @@
 #pragma once 
-#ifndef GRAPH_H_
-#define GRAPH_H_
 
 #include "common.h"
 #include "point.h"
+#include "rectangle.h"
 
 class ConnectedGraph;
 
@@ -303,7 +302,10 @@ public:
 	{
 		return g.getShortestPath(s, t, weighted);
 	}
+
+	Graph getOriginalGraph() const
+	{
+		return g;
+	}
 };
 
-
-#endif

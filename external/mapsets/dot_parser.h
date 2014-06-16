@@ -33,7 +33,6 @@ struct DotParser
 			}
 		}
 
-		g.initAdjacencyList();
 		return g;
 	}
 
@@ -276,19 +275,7 @@ struct DotParser
 
 struct DotWriter
 {
-	void writeGraph(string& filename, const Graph& g)
-	{
-		if (filename != "")
-			freopen(filename.c_str(), "w", stdout);
-
-		printf("graph {\n");
-		writeStyles(g);
-		writeNodes(g);
-		writeEdges(g);
-		printf("}\n");
-	}
-
-	void writeGraph(string& filename, ConnectedGraph& g)
+	void writeGraph(const string& filename, const Graph& g)
 	{
 		if (filename != "")
 			freopen(filename.c_str(), "w", stdout);
@@ -306,20 +293,7 @@ struct DotWriter
 			writeNode(g.style[i], false);
 	}
 
-	void writeStyles(const ConnectedGraph& cg)
-	{
-		Graph g = cg.getOriginalGraph();
-		for (int i = 0; i < (int)g.style.size(); i++)
-			writeNode(g.style[i], false);
-	}
-
 	void writeNodes(const Graph& g)
-	{
-		for (int i = 0; i < (int)g.nodes.size(); i++)
-			writeNode(g.nodes[i], true);
-	}
-
-	void writeNodes(const ConnectedGraph& g)
 	{
 		for (int i = 0; i < (int)g.nodes.size(); i++)
 			writeNode(g.nodes[i], true);
@@ -355,20 +329,6 @@ struct DotWriter
 	{
 		for (int i = 0; i < (int)g.edges.size(); i++)
 			writeEdge(g.edges[i]);
-	}
-
-	void writeEdges(ConnectedGraph& g)
-	{
-		//Graph g = cg.getOriginalGraph();
-		for (int i = 0; i < (int)g.nodes.size(); i++)
-		{
-			vector<pair<Node*, Edge*> > edges = g.getAdj(g.nodes[i]);
-			for (int j = 0; j < (int)edges.size(); j++)
-			{
-				Edge* e = edges[j].second;
-				writeEdge(e);
-			}
-		}
 	}
 
 	void writeEdge(const Edge* n)

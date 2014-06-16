@@ -85,5 +85,8 @@ vector<ConnectedGraph> Graph::getConnectedComponents()
 		result.push_back(ConnectedGraph(*this, nc));
 	}
 
+	sort(result.begin(), result.end());
+	reverse(result.begin(), result.end());
+
 	return result;
 }

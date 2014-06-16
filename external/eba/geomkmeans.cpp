@@ -22,7 +22,7 @@ Node* GeometricKMeans::getNextMean(const vector<Node*>& means, ConnectedGraph& g
 			minD = min(minD, d);
         }
 
-		minDist.push_back(Sqr(minD));
+		minDist.push_back(Sqr2(minD));
     }
 
 	int p = ChooseRandomWithProbability(minDist);

@@ -1,4 +1,5 @@
 #include "metrics.h"
+#include "segment.h"
 #include <algorithm>
 
 void findAverageDistances(Graph& g, double& avgGeom, double& avgIdeal)
@@ -28,7 +29,53 @@ void findAverageDistances(Graph& g, double& avgGeom, double& avgIdeal)
 	assert(avgGeom > EPS && avgIdeal > EPS);
 }
 
-double computeMdsStress(Graph& g)
+double computeMdsStressRelative(Graph& g)
+{
+	//TODO: 1. scale before calculations!
+	//TODO: 2. merge two stresses
+
+	if (g.edges.size() <= 0) return UNDEF;
+
+	double m = 0;
+	double sumGeom = 0;
+	double sumIdeal = 0;
+	for (int i = 0; i < (int)g.edges.size(); i++)
+ 	{
+		Edge* e = g.edges[i];
+		Node* s = g.findNodeById(e->s);
+		Node* t = g.findNodeById(e->t);
+
+		double geomDistance = s->getPos().Distance(t->getPos());
+		double idealDistance = e->getLen();
+
+		m += e->getWeight();
+		sumGeom += geomDistance;
+		sumIdeal += idealDistance;
+	}
+
+	double mdsStress = 0;
+	for (int i = 0; i < (int)g.edges.size(); i++)
+ 	{
+		Edge* e = g.edges[i];
+		Node* s = g.findNodeById(e->s);
+		Node* t = g.findNodeById(e->t);
+
+		double geomDistance = s->getPos().Distance(t->getPos());
+		double idealDistance = e->getLen();
+
+		if (idealDistance < 0) return UNDEF;
+
+		double w = e->getWeight() / m;
+		double gd = geomDistance / sumGeom;
+		double id = idealDistance / sumIdeal;
+
+		mdsStress += w * Sqr2(Abs(gd - id)/max(gd, id));
+	}
+
+	return 1.0 - mdsStress;
+}
+
+double computeSparseStress(Graph& g)
 {
 	//TODO: 1. scale before calculations!
 	//TODO: 2. merge two stresses
@@ -50,22 +97,17 @@ double computeMdsStress(Graph& g)
 
 		double diffDistance = geomDistance - idealDistance;
 
-		mdsStress += Sqr(diffDistance) / Sqr(idealDistance);
+		mdsStress += Sqr2(diffDistance) / Sqr2(idealDistance);
 	}
 
 	return sqrt(mdsStress);
 }
 
-
-double computeStress(Graph& g)
+double computeScalingFactor(Graph& g)
 {
-	if (g.edges.size() <= 0) return UNDEF;
+	double num = 0;
+	double den = 0;
 
-	double avgGeom = 0;
-	double avgIdeal = 0;
-	findAverageDistances(g, avgGeom, avgIdeal);
-
-	double stress = 0;
 	for (int i = 0; i < (int)g.nodes.size(); i++)
 		for (int j = i+1; j < (int)g.nodes.size(); j++)
 		{
@@ -77,8 +119,37 @@ double computeStress(Graph& g)
 			//not connected
 			if (idealDistance < 0) continue;
 
-			double delta = Abs(geomDistance/avgGeom - idealDistance/avgIdeal);
-			stress += delta*delta / (idealDistance*idealDistance);
+			num += geomDistance / idealDistance;
+			assert(idealDistance > EPS);
+			den += Sqr2(geomDistance) / Sqr2(idealDistance);
+		}
+
+	assert(Abs(den) > EPS);
+	return num / den;
+}
+
+double computeFullStress(Graph& g)
+{
+	if (g.edges.size() <= 0) return UNDEF;
+
+	double s = computeScalingFactor(g);
+	assert(s > 0.0);
+	double stress = 0;
+	for (int i = 0; i < (int)g.nodes.size(); i++)
+		for (int j = i+1; j < (int)g.nodes.size(); j++)
+		{
+			Node* sn = g.nodes[i];
+			Node* tn = g.nodes[j];
+
+			double geomDistance = sn->getPos().Distance(tn->getPos());
+			double idealDistance = g.getShortestPath(sn, tn, true);
+			//not connected
+			if (idealDistance < 0) continue;
+
+			double wij = 1.0 / Sqr2(idealDistance);
+
+			double delta = s*geomDistance - idealDistance;
+			stress += Sqr2(delta) / Sqr2(idealDistance);
 		}
 
 	return stress;
@@ -213,7 +284,7 @@ double computeUniform(const Graph& g)
 		for (int j = 0; j < H; j++) {
 			double cellWidth = bb.getWidth()/W;
 			double cellHeight = bb.getHeight()/H;
-			Rectangle cell(bb.pLB.x + cellWidth * i, bb.pLB.y + cellHeight * j, bb.pLB.x + cellWidth * (i+1), bb.pLB.y + cellHeight * (j+1));
+			Rectangle cell(bb.xl + cellWidth * i, bb.yl + cellHeight * j, bb.xl + cellWidth * (i+1), bb.yl + cellHeight * (j+1));
 
 			//observed frequency (words inside cell)
 			double p = 0;
@@ -265,6 +336,38 @@ double computeAspectRatio(const Graph& g)
 	double mx = max(bb.getWidth(), bb.getHeight());;
 	double mn = min(bb.getWidth(), bb.getHeight());;
 	return mx / mn;
+}
+
+double computeCrossings(Graph& g, double& minCrossAngle, double& avgCrossAngle)
+{
+	minCrossAngle = avgCrossAngle = UNDEF;
+	if (g.nodes.size() <= 0) return UNDEF;
+
+	VD crossAngles;
+	int cr = 0;
+	for (int i = 0; i < (int)g.edges.size(); i++)
+		for (int j = i+1; j < (int)g.edges.size(); j++)
+		{
+			Edge* e1 = g.edges[i];
+			Edge* e2 = g.edges[j];
+
+			Node* s1 = g.findNodeById(e1->s);
+			Node* t1 = g.findNodeById(e1->t);
+			Node* s2 = g.findNodeById(e2->s);
+			Node* t2 = g.findNodeById(e2->t);
+
+			if (Segment::EdgesIntersect(s1->getPos(), t1->getPos(), s2->getPos(), t2->getPos()))
+			{
+				cr++;
+				double angle = Segment::CrossingAngle(s1->getPos(), t1->getPos(), s2->getPos(), t2->getPos());
+				assert(angle >= 0.0 && angle <= 1.5707963268);
+				crossAngles.push_back(angle);
+			}
+		}
+
+	minCrossAngle = MinimumValue(crossAngles);
+	avgCrossAngle = AverageValue(crossAngles);
+	return cr;
 }
 
 double computeModularity(Graph& g)
@@ -402,13 +505,14 @@ Metrics computeMetrics(Graph& g)
 	m.m = g.edges.size();
 	m.c = g.numberOfClusters();
 
-	m.mdsStress = computeMdsStress(g);
-	m.stress = computeStress(g);
-	m.distortion = computeDistortion(g);
-	m.neigPreservation = computeNeigPreservation(g);
+	m.sparseStress = computeSparseStress(g);
+	m.fullStress = computeFullStress(g);
+	//m.distortion = computeDistortion(g);
+	//m.neigPreservation = computeNeigPreservation(g);
 	//m.compactness = computeCompactness(g);
-	m.uniform = computeUniform(g);
-	m.aspectRatio = computeAspectRatio(g);
+	//m.uniform = computeUniform(g);
+	//m.aspectRatio = computeAspectRatio(g);
+	m.crossings = computeCrossings(g, m.minCrossAngle, m.avgCrossAngle);
 
 	m.modularity = computeModularity(g);
 	m.coverage = computeCoverage(g);

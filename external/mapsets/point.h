@@ -1,5 +1,8 @@
 #pragma once
 
+#include "common.h"
+#include "random_utils.h"
+
 class Point
 {
 	double F(double x)
@@ -59,9 +62,19 @@ public:
 		return sqrt(fabs(ret));
 	}
 
+	double Length() const
+	{
+		return sqrt(fabs(Sqr2(x) + Sqr2(y)));
+	}
+
+	double LengthSquared() const
+	{
+		return Sqr2(x) + Sqr2(y);
+	}
+
 	double Distance2(const Point& p) const
 	{
-		double ret = (x-p.x)*(x-p.x) + (y-p.y)*(y-p.y);
+		double ret = Sqr2(x-p.x) + Sqr2(y-p.y);
 		return ret;
 	}
 
@@ -129,6 +142,13 @@ public:
 		return ret;
 	}
 
+	Point operator / (double s) const
+	{
+		Point ret = *this;
+		ret.Scale(1.0/s);
+		return ret;
+	}
+
     static double CrossProduct(Point point0, Point point1) 
 	{
         return point0.x * point1.y - point0.y * point1.x;
@@ -137,6 +157,16 @@ public:
     static double DotProduct(Point point0, Point point1) 
 	{
         return point0.x * point1.x + point0.y * point1.y;
+    }
+
+    static Point RandomPoint(double minX, double maxX, double minY, double maxY) 
+	{
+		return Point(randDouble(minX, maxX), randDouble(minY, maxY));
+    }
+
+    static Point RandomPoint() 
+	{
+		return RandomPoint(0, 1, 0, 1);
     }
 
 };

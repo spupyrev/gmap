@@ -3,6 +3,7 @@
 #include "dot_parser.h"
 #include "clustering.h"
 #include "metrics.h"
+#include "segment.h"
 #include "cmdargs.h"
 
 

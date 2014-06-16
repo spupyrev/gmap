@@ -45,7 +45,7 @@ void OutputInfo(const char* message, ...)
     std::vsprintf(buffer, message, ap);
     va_end(ap);
 
-	cerr<<string(buffer);
+	//cerr<<string(buffer);
 	if ( flog != 0 )
 	{
 		fprintf(flog, "%s", buffer);

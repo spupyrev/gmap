@@ -248,7 +248,7 @@ void BuildTrees(const CMDArgs& args)
 int main(int argc, char **argv)
 {
 	InitRand(123);
-	InitTime("log");
+	//InitTime("log");
 
 	//TestClosestPoints();
 	//TestSegmentIntersections();
@@ -263,6 +263,6 @@ int main(int argc, char **argv)
 
 	BuildTrees(args);
 
-	FinalizeTime();
+	//FinalizeTime();
 	return 0;
 }

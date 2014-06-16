@@ -306,15 +306,14 @@ struct DotWriter
 		else
 			printf("  %s ", n->id.c_str());
 
-		if (n->attr.size() > 0)
-			writeAttr(n->attr);
+		writeAttr(n->attr);
 		printf(";\n");
 	}
 
 	void writeAttr(const map<string, string>& attr)
 	{
 		printf("[");
-		for (map<string, string>::const_iterator iter = attr.begin(); iter != attr.end(); iter++)
+		for (auto iter = attr.begin(); iter != attr.end(); iter++)
 		{
 			string key = (*iter).first;
 			string value = (*iter).second;

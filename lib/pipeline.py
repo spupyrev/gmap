@@ -56,6 +56,9 @@ def mapsets_post_command(color_scheme):
     	return "gvmap -e -a 0 -s 200"
     return "gvmap -e -a 0 -s 200 -c %s" % (color_scheme)
 
+def pointcloud_command():
+    return CURPATH + "/external/pointcloud/pointcloud"
+    
 
 def removeNonAscii(s): return "".join(i for i in s if ord(i)<128)
 
@@ -78,10 +81,16 @@ def call_graphviz(task):
 		return None, None
 
 def run_layout(task, layout_algorithm, map_string):
+	if layout_algorithm == 'graph':
+		return map_string
+
 	set_status(task, 'running layout')
 	return call_process(graphviz_command_layout(alg = layout_algorithm), map_string)
 
 def run_clustering(task, cluster_algorithm, dot_out):
+	if cluster_algorithm == 'graph':
+		return dot_out
+
 	set_status(task, 'running clustering')
 	if cluster_algorithm == 'k-means':
 		return call_process(cluster_command('graphkmeans'), dot_out)
@@ -124,6 +133,21 @@ def call_graphviz_int(task):
     	#log.debug('Input: %s' %(dot_out))
     	if task.color_scheme == 'bubble-sets':
     		dot_out = run_color_assignment(task, dot_out)
+
+    	svg_out = get_graphviz_map(dot_out, 'svg')
+    	return dot_out, svg_out
+
+    elif vis_type == 'point-cloud':
+    	dot_out = run_layout(task, layout_algorithm, map_string)
+    	dot_out = run_clustering(task, cluster_algorithm, dot_out)
+
+    	set_status(task, 'coloring')
+    	dot_out = call_process(graphviz_command_gmap(task.color_scheme), dot_out)
+    	if task.color_scheme == 'bubble-sets':
+    		dot_out = run_color_assignment(task, dot_out)
+
+    	set_status(task, 'point cloud construction')
+    	dot_out = call_process(pointcloud_command(), dot_out)
 
     	svg_out = get_graphviz_map(dot_out, 'svg')
     	return dot_out, svg_out

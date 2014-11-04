@@ -1,7 +1,5 @@
 #pragma once
 #pragma warning(disable:4996)
-#ifndef _CMDARGS_H_
-#define _CMDARGS_H_
 
 #include "common.h"
 
@@ -71,6 +69,3 @@ void ParseCommandLine(int argc, char **argv, CMDArgs& res)
 		if (!res.setParam(name, value)) usage(argc, argv);
 	}
 }
-
-
-#endif

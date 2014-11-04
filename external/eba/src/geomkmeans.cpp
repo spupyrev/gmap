@@ -216,7 +216,7 @@ vector<vector<Node*> > GeometricKMeans::cluster(ConnectedGraph& g, int K)
 		for (int i = 0; i < (int)groups.size(); i++)
 			if (groups[i].size() > 0) resGroups.push_back(groups[i]);
 
-		double value = clusterQuality(g, resGroups);
+		double value = modularity(g, resGroups);
 		if (bestValue == -1 || bestValue < value)
 		{
 			bestValue = value;

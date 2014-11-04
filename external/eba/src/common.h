@@ -6,6 +6,7 @@
 #include <vector>
 #include <cassert>
 #include <iostream>
+#include <sstream>
 #include <map>
 #include <set>
 #include <string>
@@ -23,6 +24,8 @@ typedef vector<VD> VVD;
 
 const double EPS = 1e-6;
 const double INF = 123456789.0;
+const double PI = 3.14159265;
+
 
 template<class T> T Abs(const T& t)
 {
@@ -42,10 +45,16 @@ template<class T> T Sqr2(const T& t)
 	return ((t)*(t));
 }
 
+template <class T>
+inline string toString(const T& t)
+{
+	stringstream ss;
+	ss << t;
+	return ss.str();
+}
+
 VS splitNotNull(string s, string c);
 int string2Int(string s);
-string int2String(int i);
-string double2String(double i);
 
 double AverageValue(const vector<double>& v);
 double MedianValue(const vector<double>& v);

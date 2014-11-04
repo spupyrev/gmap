@@ -7,7 +7,7 @@ VS splitNotNull(string s, string c)
 	string tec = "";
 	for (int i = 0; i < (int)s.length(); i++)
 	{
-		if (c.find(s[i]) != -1) 
+		if (c.find(s[i]) != string::npos) 
 		{
 			if ((int)tec.length() > 0) result.push_back(tec);
 			tec = "";
@@ -25,20 +25,6 @@ int string2Int(string s)
 	return result;
 }
 
-string int2String(int i)
-{
-	char buf[128];
-	sprintf(buf, "%d", i);
-	return string(buf);
-}
-
-string double2String(double i)
-{
-	char buf[128];
-	sprintf(buf, "%lf", i);
-	return string(buf);
-}
-
 double Sum(const vector<double>& v)
 {
 	double sum = 0;
@@ -50,7 +36,7 @@ double Sum(const vector<double>& v)
 double AverageValue(const vector<double>& v)
 {
 	double av = Sum(v);
-	if ( !v.empty() )
+	if (!v.empty())
 		av /= (double)v.size();
 	return av;
 }

@@ -1,6 +1,6 @@
 #include "clustering.h"
 
-double ClusterAlgorithm::clusterQuality(ConnectedGraph& g, const VVN& groups) const
+double ClusterAlgorithm::modularity(ConnectedGraph& g, const VVN& groups) const
 {
 	double res = 0;
 
@@ -45,7 +45,7 @@ double ClusterAlgorithm::clusterQuality(ConnectedGraph& g, const VVN& groups) co
 	return res;
 }
 
-double ClusterAlgorithm::clusterQuality(ConnectedGraph& g, const VI& clusters) const
+double ClusterAlgorithm::modularity(ConnectedGraph& g, const VI& clusters) const
 {
 	map<int, VN> tmp;
 	for (int i = 0; i < (int)clusters.size(); i++)
@@ -62,7 +62,7 @@ double ClusterAlgorithm::clusterQuality(ConnectedGraph& g, const VI& clusters) c
 		res.push_back((*it).second);
 	}
 
-	return clusterQuality(g, res);
+	return modularity(g, res);
 }
 
 void ClusterAlgorithm::cluster(Graph& g, int K)
@@ -76,7 +76,7 @@ void ClusterAlgorithm::cluster(Graph& g, int K)
 		K = (int)connG.size();
 	}
 
-	//sort by number of nodes
+	//sort by the number of nodes
 	sort(connG.begin(), connG.end());
 	int curK = 0;
 	for (int i = 0; i < (int)connG.size(); i++)

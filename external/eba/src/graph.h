@@ -10,14 +10,11 @@ class Node
 {
 public:
 	int index;
-
 	string id;
-
 	map<string, string> attr;
-
 	Point pos;
 
-	Node(int index): pos(-1.0, -1.0), index(index) {};
+	Node(int index): index(index), pos(-1.0, -1.0) {};
 
 	Point getPos()
 	{
@@ -62,13 +59,11 @@ class Edge
 {
 public:
 	int index;
-
 	string s, t;
 	map<string, string> attr;
-
 	double len;
 
-	Edge(int index): len(-1), index(index) {}
+	Edge(int index): index(index), len(-1) {}
 
 	double getWeight()
 	{
@@ -134,7 +129,7 @@ public:
 	{
 		for (int i = 0; i < (int)clust.size(); i++)
 		{
-			string c = int2String(i + first + 1);
+			string c = toString(i + first + 1);
 			for (int j = 0; j < (int)clust[i].size(); j++)
 			{
 				clust[i][j]->attr["cluster"] = c;

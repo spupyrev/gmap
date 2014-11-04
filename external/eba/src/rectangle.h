@@ -9,8 +9,8 @@ public:
 	double yl, yr;
 
 	Rectangle() {}
-	Rectangle(const Point& p): xl(p.x), yl(p.y), xr(p.x), yr(p.y) {}
-	Rectangle(double xl, double xr, double yl, double yr): xl(xl), yl(yl), xr(xr), yr(yr) {}
+	Rectangle(const Point& p): xl(p.x), xr(p.x), yl(p.y), yr(p.y) {}
+	Rectangle(double xl, double xr, double yl, double yr): xl(xl), xr(xr), yl(yl), yr(yr) {}
 
 	Rectangle(const Rectangle& rect0, const Rectangle& rect1)
 	{

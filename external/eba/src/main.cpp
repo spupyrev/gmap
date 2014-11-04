@@ -5,6 +5,7 @@
 #include "metrics.h"
 #include "segment.h"
 #include "cmdargs.h"
+#include "random_utils.h"
 
 
 void doMetricsAction(CMDArgs& args)
@@ -38,6 +39,10 @@ void doClusteringAction(CMDArgs& args)
 	{
 		algo = new GraphHierarchical();
 	}
+	else if (args.C == "infomap")
+	{
+		algo = new InfoMap();
+	}
 	else
 	{
 		cerr<<"Unknown clustering type: '"<<args.C<<"'\n";
@@ -66,7 +71,7 @@ void doClusteringAction(CMDArgs& args)
 
 int main(int argc, char **argv)
 {
-	srand(123);
+	InitRand(123);
 
 	CMDArgs args;
 	ParseCommandLine(argc, argv, args);

@@ -1,6 +1,4 @@
 #pragma once 
-#ifndef CLUSTERING_H_
-#define CLUSTERING_H_
 
 #include "common.h"
 #include "graph.h"
@@ -13,12 +11,17 @@ vector<vector<Node*> > clusterBetweenness(const Graph& g, int K);
 class ClusterAlgorithm
 {
 public:
-	void cluster(Graph& g);
-	void cluster(Graph& g, int K);
+	ClusterAlgorithm() {}
+	~ClusterAlgorithm() {}
+
+	virtual void cluster(Graph& g);
+	virtual void cluster(Graph& g, int K);
+
+protected:
 	virtual VVN cluster(ConnectedGraph& g, int K) = 0;
 
-	double clusterQuality(ConnectedGraph& g, const VVN&) const;
-	double clusterQuality(ConnectedGraph& g, const VI&) const;
+	double modularity(ConnectedGraph& g, const VVN&) const;
+	double modularity(ConnectedGraph& g, const VI&) const;
 };
 
 class GeometricKMeans: public ClusterAlgorithm
@@ -57,4 +60,9 @@ class GraphHierarchical: public ClusterAlgorithm
 	double computeAverageLength(ConnectedGraph& g, const VN& v1, const VN& v2);
 };
 
-#endif
+class InfoMap: public ClusterAlgorithm
+{
+	void cluster(Graph& g);
+	void cluster(Graph& g, int K);
+	VVN cluster(ConnectedGraph& g, int K) {return VVN();}
+};

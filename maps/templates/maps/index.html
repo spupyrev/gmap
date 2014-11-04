@@ -96,9 +96,9 @@ function toggleAdvanced(first_load) {
             <select name="vis_type" id="vis_type">
                 <option value="node-link">Node-Link Diagram</option>
                 <option value="gmap" selected='selected'>GMap</option>
+                <option value="map-sets">Map Sets</option>
                 <option value="bubble-sets">Bubble Sets</option>
                 <option value="line-sets">Line Sets</option>
-                <option value="map-sets">Map Sets</option>
             </select><br>
 
             <label for='layout_algorithm' class="labelAdvanced">Layout Algorithm:</label>
@@ -110,12 +110,18 @@ function toggleAdvanced(first_load) {
 
             <label for='cluster_algorithm' class="labelAdvanced">Cluster Algorithm:</label>
             <select name="cluster_algorithm" id="cluster_algorithm">
-            	<option value="modularity">modularity</option>
-            	<option value="cont-modularity">contiguous modularity</option>
-                <option value="k-means">k-means</option>
-                <option value="cont-k-means" selected='selected'>contiguous k-means</option>
-                <option value="hierarchical">hierarchical</option>
-                <option value="cont-hierarchical">contiguous hierarchical</option>
+            	<optgroup label="fragmented">
+            		<option value="infomap">infomap</option>
+            		<option value="modularity">modularity</option>
+	                <option value="k-means">k-means</option>
+	                <option value="hierarchical">hierarchical</option>
+            	</optgroup>
+            	<optgroup label="contiguous">
+            		<option value="cont-infomap">infomap</option>
+	            	<option value="cont-modularity">modularity</option>
+	                <option value="cont-k-means" selected='selected'>k-means</option>
+	                <option value="cont-hierarchical">hierarchical</option>
+            	</optgroup>
                 <option value="graph">use graph setting</option>
             </select><br>
             </div>

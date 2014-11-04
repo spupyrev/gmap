@@ -146,8 +146,6 @@ double computeFullStress(Graph& g)
 			//not connected
 			if (idealDistance < 0) continue;
 
-			double wij = 1.0 / Sqr2(idealDistance);
-
 			double delta = s*geomDistance - idealDistance;
 			stress += Sqr2(delta) / Sqr2(idealDistance);
 		}
@@ -342,6 +340,7 @@ double computeCrossings(Graph& g, double& minCrossAngle, double& avgCrossAngle)
 {
 	minCrossAngle = avgCrossAngle = UNDEF;
 	if (g.nodes.size() <= 0) return UNDEF;
+	if (g.edges.size() > 2000) return UNDEF;
 
 	VD crossAngles;
 	int cr = 0;
@@ -505,14 +504,14 @@ Metrics computeMetrics(Graph& g)
 	m.m = g.edges.size();
 	m.c = g.numberOfClusters();
 
-	m.sparseStress = computeSparseStress(g);
-	m.fullStress = computeFullStress(g);
+	//m.sparseStress = computeSparseStress(g);
+	//m.fullStress = computeFullStress(g);
 	//m.distortion = computeDistortion(g);
 	//m.neigPreservation = computeNeigPreservation(g);
 	//m.compactness = computeCompactness(g);
 	//m.uniform = computeUniform(g);
 	//m.aspectRatio = computeAspectRatio(g);
-	m.crossings = computeCrossings(g, m.minCrossAngle, m.avgCrossAngle);
+	//m.crossings = computeCrossings(g, m.minCrossAngle, m.avgCrossAngle);
 
 	m.modularity = computeModularity(g);
 	m.coverage = computeCoverage(g);

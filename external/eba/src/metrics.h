@@ -1,21 +1,19 @@
-#pragma once 
-#ifndef METRICS_H_
-#define METRICS_H_
+#pragma once
 
-#include "common.h"
-#include "graph.h"
+#include "common/common.h"
+#include "common/graph/dot_graph.h"
 
 const double UNDEF = -12345.0;
 
-struct Metrics
+class Metrics
 {
+public:
 	int n, m, c;
 
 	double sparseStress;
 	double fullStress;
 	double distortion;
 	double neigPreservation;
-	double compactness;
 	double uniform;
 	double aspectRatio;
 	double crossings;
@@ -32,7 +30,6 @@ struct Metrics
 		fullStress = UNDEF;
 		distortion = UNDEF;
 		neigPreservation = UNDEF;
-		compactness = UNDEF;
 		uniform = UNDEF;
 		aspectRatio = UNDEF;
 		crossings = UNDEF;
@@ -44,43 +41,75 @@ struct Metrics
 		conductance = UNDEF;
 	}
 
-	void outputLayout() const
+	void OutputLayout(const string& filename) const
 	{
-		printf("|V| = %d   |E| = %d   |C| = %d\n", n, m, c);
-		printf("Sparse-Stress:              %s\n", safeString(sparseStress).c_str());
-		printf("Full-Stress:                %s\n", safeString(fullStress).c_str());
-		printf("Distortion:                 %s\n", safeString(distortion).c_str());
-		printf("Neighborhood Preservation:  %s\n", safeString(neigPreservation).c_str());
-		//printf("Compactness:                %s\n", safeString(compactness).c_str());
-		printf("Uniform Area Utilization:   %s\n", safeString(uniform).c_str());
-		printf("Aspect Ratio:               %s\n", safeString(aspectRatio).c_str());
-		printf("Crossings:                  %s\n", safeString(crossings).c_str());
-		printf("Min-CrossAngle:             %s\n", safeString(minCrossAngle).c_str());
-		printf("Avg-CrossAngle:             %s\n", safeString(avgCrossAngle).c_str());
+		if (filename != "")
+		{
+			ofstream fileStream;
+			fileStream.open(filename.c_str(), ios::out);
+			OutputLayout(fileStream);
+			fileStream.close();
+		}
+		else
+		{
+			OutputLayout(cout);
+		}
 	}
 
-	void outputCluster() const
+	void OutputCluster(const string& filename) const
 	{
-		printf("Modularity:                 %s\n", safeString(modularity).c_str());
-		printf("Coverage:                   %s\n", safeString(coverage).c_str());
-		printf("Conductance:                %s\n", safeString(conductance).c_str());
+		if (filename != "")
+		{
+			ofstream fileStream;
+			fileStream.open(filename.c_str(), ios::out);
+			OutputCluster(fileStream);
+			fileStream.close();
+		}
+		else
+		{
+			OutputCluster(cout);
+		}
 	}
 
-	void output() const
+	void OutputLayout(ostream& out) const
 	{
-		outputLayout();
-		outputCluster();
+		out << "|V| = " << n << "   |E| = " << m << "   |C| = " << c << "\n";
+
+		out << "Sparse-Stress:              " << safeString(sparseStress) << "\n";
+		out << "Full-Stress:                " << safeString(fullStress) << "\n";
+		out << "Distortion:                 " << safeString(distortion) << "\n";
+		out << "Neighborhood Preservation:  " << safeString(neigPreservation) << "\n";
+		out << "Uniform Area Utilization:   " << safeString(uniform) << "\n";
+		out << "Aspect Ratio:               " << safeString(aspectRatio) << "\n";
+		out << "Crossings:                  " << safeString(crossings) << "\n";
+		out << "Min-CrossAngle:             " << safeString(minCrossAngle) << "\n";
+		out << "Avg-CrossAngle:             " << safeString(avgCrossAngle) << "\n";
+	}
+
+	void OutputCluster(ostream& out) const
+	{
+		out << "Modularity:                 " << safeString(modularity) << "\n";
+		out << "Coverage:                   " << safeString(coverage) << "\n";
+		out << "Conductance:                " << safeString(conductance) << "\n";
+	}
+
+	void Output(const string& filename) const
+	{
+		OutputLayout(filename);
+		OutputCluster(filename);
 	}
 
 	string safeString(double value) const
 	{
 		if (value == UNDEF) return "undefined";
-		char s[128];
-		sprintf(s, "%.4lf", value);
-		return string(s);
+		stringstream ss;
+		ss << fixed;
+		ss.precision(4);
+		ss << value;
+		return ss.str();
 	}
+
+	void ComputeLayout(DotGraph& g);
+	void ComputeCluster(DotGraph& g);
+	void Compute(DotGraph& g);
 };
-
-Metrics computeMetrics(Graph& g);
-
-#endif

@@ -1,0 +1,11 @@
+Usage: kmeans [options]
+Allowed options:
+  -C=value       : type of clustering [geometrickmeans|graphkmeans|geometrichierarchical|graphhierarchical|infomap]
+  -K=value       : desired number of clusters (selected automatically, if no value is supplied)
+  -action=value  : action [clustering|metrics]
+  -i=value       : input file (stdin, if no input file is supplied)
+  -o=value       : output file (stdout, if no output file is supplied)
+
+Examples: 
+	kmeans -action=clustering -o=out.gv -K=20 -C=geometrickmeans -i=sample.gv
+	kmeans -action=metrics -i=sample.gv

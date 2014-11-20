@@ -52,7 +52,8 @@ END_G {
       if (fsz <= 0.1) fsz = 18.0;
       node0.fontsize = fsz*factor;
     } else {
-      node0.label="\\N"; node0.style="invis";
+      node0.label="\\N";// node0.style="invis";
+      node0.shape="point"; node0.width="0.05";
     }
   }
   $O = g;

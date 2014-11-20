@@ -37,11 +37,11 @@ def create_map(task, *args):
 	if task.semantic_zoom == 'true':
 		set_status(task, 'semantic zoom construction')
 
-		svg_rep0 = call_graphviz_scale(dot_rep, 8, 10)
+		svg_rep0 = call_graphviz_scale(dot_rep, 4, 10)
 		svg_rep0, width, height = strip_dimensions(svg_rep0)
 		task.svg_rep0 = svg_rep0
 
-		svg_rep1 = call_graphviz_scale(dot_rep, 4, 20)
+		svg_rep1 = call_graphviz_scale(dot_rep, 3, 20)
 		svg_rep1, width, height = strip_dimensions(svg_rep1)
 		task.svg_rep1 = svg_rep1
 

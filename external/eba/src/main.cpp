@@ -1,94 +1,100 @@
-#include "common.h"
-#include "graph.h"
-#include "dot_parser.h"
+#include "common/common.h"
+#include "common/random_utils.h"
+#include "common/cmd_options.h"
+
+#include "common/graph/dot_graph.h"
+#include "common/graph/dot_parser.h"
+
 #include "clustering.h"
 #include "metrics.h"
-#include "segment.h"
-#include "cmdargs.h"
-#include "random_utils.h"
 
-
-void doMetricsAction(CMDArgs& args)
+void MetricsAction(const CMDOptions* args)
 {
-	DotParser parser;
-	Graph g = parser.parseGraph(args.inputFile);
-		
-	Metrics m = computeMetrics(g);
-	m.output();
+	DotReader parser;
+	DotGraph g = parser.ReadGraph(args->getOption("-i"));
+
+	Metrics m;
+	m.Compute(g);
+	m.Output(args->getOption("-o"));
 }
 
-void doClusteringAction(CMDArgs& args)
+void ClusteringAction(const CMDOptions* args)
 {
-	DotParser parser;
-	Graph g = parser.parseGraph(args.inputFile);
+	DotReader parser;
+	DotGraph g = parser.ReadGraph(args->getOption("-i"));
 
-	ClusterAlgorithm* algo;
-	if (args.C == "geometrickmeans")
-	{
+	string algoName = args->getOption("-C");
+	ClusterAlgorithm* algo = NULL;
+
+	if (algoName == "geometrickmeans")
 		algo = new GeometricKMeans();
-	}
-	else if (args.C == "graphkmeans")
-	{
+	else if (algoName == "graphkmeans")
 		algo = new GraphKMeans();
-	}
-	else if (args.C == "geometrichierarchical")
-	{
+	else if (algoName == "geometrichierarchical")
 		algo = new GeometricHierarchical();
-	}
-	else if (args.C == "graphhierarchical")
-	{
+	else if (algoName == "graphhierarchical")
 		algo = new GraphHierarchical();
-	}
-	else if (args.C == "infomap")
-	{
+	else if (algoName == "infomap")
 		algo = new InfoMap();
-	}
 	else
-	{
-		cerr<<"Unknown clustering type: '"<<args.C<<"'\n";
-		exit(-1);
-	}
+		args->InvalidOption("-C");
 
-	if (args.K == "")
+	string numberOfClusters = args->getOption("-K");
+	if (numberOfClusters == "graph")
+	{
+		int k = g.ClusterCount();
+		algo->cluster(g, k);
+	}
+	else if (numberOfClusters == "")
 	{
 		algo->cluster(g);
 	}
-	else if (args.K == "graph")
-	{
-		int k = g.numberOfClusters();
-		algo->cluster(g, k);
-	}
 	else
 	{
-		int k = string2Int(args.K);
+		int k = toInt(numberOfClusters);
 		algo->cluster(g, k);
 	}
+
 	delete algo;
 
 	DotWriter writer;
-	writer.writeGraph(args.outputFile, g);
+	writer.WriteGraph(args->getOption("-o"), g);
+}
+
+CMDOptions* PrepareCMDOptions(int argc, char **argv)
+{
+	CMDOptions* args = new CMDOptions();
+	args->AddAllowedOption("-action", "  -action=value  : action [clustering|metrics]");
+	args->AddAllowedOption("-i", "",  "  -i=value       : input file (stdin, if no input file is supplied)");
+	args->AddAllowedOption("-o", "",  "  -o=value       : output file (stdout, if no output file is supplied)");
+	args->AddAllowedOption("-C",	  "  -C=value       : type of clustering [geometrickmeans|graphkmeans|geometrichierarchical|graphhierarchical|infomap]");
+	args->AddAllowedOption("-K", "",  "  -K=value       : desired number of clusters (selected automatically, if no value is supplied)");
+
+	args->Parse(argc, argv);
+	return args;
 }
 
 int main(int argc, char **argv)
 {
 	InitRand(123);
 
-	CMDArgs args;
-	ParseCommandLine(argc, argv, args);
+	CMDOptions* args = PrepareCMDOptions(argc, argv);
 
-	if (args.action == "clustering")
+	string action = args->getOption("-action");
+	if (action == "clustering")
 	{
-		doClusteringAction(args);
+		ClusteringAction(args);
 	}
-	else if (args.action == "metrics")
+	else if (action == "metrics")
 	{
-		doMetricsAction(args);
+		MetricsAction(args);
 	}
 	else
 	{
-		cerr<<"Unknown command-line argument 'action': '"<<args.action<<"'\n";
-		usage(argc, argv);
+		args->InvalidOption("-action");
 	}
+
+	delete args;
 
 	return 0;
 }

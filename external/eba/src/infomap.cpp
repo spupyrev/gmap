@@ -2,20 +2,22 @@
 
 #include "infomap/infohiermap.h"
 
-void InfoMap::cluster(Graph& g)
+using namespace infomap;
+
+void InfoMap::cluster(DotGraph& g)
 {
-	vector<ConnectedGraph> connG = g.getConnectedComponents();
+	vector<ConnectedDotGraph> connG = g.getConnectedComponents();
 
 	int curK = 0;
 	for (int i = 0; i < (int)connG.size(); i++)
 	{
-		vector<vector<Node*> > clust = runInfomap(connG[i], 10, 1.0);
+		vector<vector<DotNode*> > clust = runInfomap(connG[i], 10, 1.0);
 		g.assignClusters(clust, curK);
 		curK += clust.size();
 	}
 }
 
-void InfoMap::cluster(Graph& g, int K)
+void InfoMap::cluster(DotGraph& g, int K)
 {
 	cluster(g);
 }

@@ -1,18 +1,18 @@
 #include "metrics.h"
-#include "segment.h"
-#include <algorithm>
 
-void findAverageDistances(Graph& g, double& avgGeom, double& avgIdeal)
+#include "common/geometry/segment.h"
+
+void findAverageDistances(DotGraph& g, double& avgGeom, double& avgIdeal)
 {
 	avgGeom = 0;
 	avgIdeal = 0;
 	double cnt = 0;
 
 	for (int i = 0; i < (int)g.nodes.size(); i++)
-		for (int j = i+1; j < (int)g.nodes.size(); j++)
+		for (int j = i + 1; j < (int)g.nodes.size(); j++)
 		{
-			Node* s = g.nodes[i];
-			Node* t = g.nodes[j];
+			DotNode* s = g.nodes[i];
+			DotNode* t = g.nodes[j];
 
 			double geomDistance = s->getPos().Distance(t->getPos());
 			double idealDistance = g.getShortestPath(s, t, true);
@@ -29,7 +29,7 @@ void findAverageDistances(Graph& g, double& avgGeom, double& avgIdeal)
 	assert(avgGeom > EPS && avgIdeal > EPS);
 }
 
-double computeMdsStressRelative(Graph& g)
+double computeMdsStressRelative(DotGraph& g)
 {
 	//TODO: 1. scale before calculations!
 	//TODO: 2. merge two stresses
@@ -40,10 +40,10 @@ double computeMdsStressRelative(Graph& g)
 	double sumGeom = 0;
 	double sumIdeal = 0;
 	for (int i = 0; i < (int)g.edges.size(); i++)
- 	{
-		Edge* e = g.edges[i];
-		Node* s = g.findNodeById(e->s);
-		Node* t = g.findNodeById(e->t);
+	{
+		DotEdge* e = g.edges[i];
+		DotNode* s = g.findNodeById(e->s);
+		DotNode* t = g.findNodeById(e->t);
 
 		double geomDistance = s->getPos().Distance(t->getPos());
 		double idealDistance = e->getLen();
@@ -55,10 +55,10 @@ double computeMdsStressRelative(Graph& g)
 
 	double mdsStress = 0;
 	for (int i = 0; i < (int)g.edges.size(); i++)
- 	{
-		Edge* e = g.edges[i];
-		Node* s = g.findNodeById(e->s);
-		Node* t = g.findNodeById(e->t);
+	{
+		DotEdge* e = g.edges[i];
+		DotNode* s = g.findNodeById(e->s);
+		DotNode* t = g.findNodeById(e->t);
 
 		double geomDistance = s->getPos().Distance(t->getPos());
 		double idealDistance = e->getLen();
@@ -69,13 +69,13 @@ double computeMdsStressRelative(Graph& g)
 		double gd = geomDistance / sumGeom;
 		double id = idealDistance / sumIdeal;
 
-		mdsStress += w * Sqr2(Abs(gd - id)/max(gd, id));
+		mdsStress += w * Sqr2(Abs(gd - id) / max(gd, id));
 	}
 
 	return 1.0 - mdsStress;
 }
 
-double computeSparseStress(Graph& g)
+double computeSparseStress(DotGraph& g)
 {
 	//TODO: 1. scale before calculations!
 	//TODO: 2. merge two stresses
@@ -85,10 +85,10 @@ double computeSparseStress(Graph& g)
 	double mdsStress = 0;
 
 	for (int i = 0; i < (int)g.edges.size(); i++)
- 	{
-		Edge* e = g.edges[i];
-		Node* s = g.findNodeById(e->s);
-		Node* t = g.findNodeById(e->t);
+	{
+		DotEdge* e = g.edges[i];
+		DotNode* s = g.findNodeById(e->s);
+		DotNode* t = g.findNodeById(e->t);
 
 		double geomDistance = s->getPos().Distance(t->getPos());
 		double idealDistance = e->getLen();
@@ -103,16 +103,16 @@ double computeSparseStress(Graph& g)
 	return sqrt(mdsStress);
 }
 
-double computeScalingFactor(Graph& g)
+double computeScalingFactor(DotGraph& g)
 {
 	double num = 0;
 	double den = 0;
 
 	for (int i = 0; i < (int)g.nodes.size(); i++)
-		for (int j = i+1; j < (int)g.nodes.size(); j++)
+		for (int j = i + 1; j < (int)g.nodes.size(); j++)
 		{
-			Node* s = g.nodes[i];
-			Node* t = g.nodes[j];
+			DotNode* s = g.nodes[i];
+			DotNode* t = g.nodes[j];
 
 			double geomDistance = s->getPos().Distance(t->getPos());
 			double idealDistance = g.getShortestPath(s, t, true);
@@ -128,7 +128,7 @@ double computeScalingFactor(Graph& g)
 	return num / den;
 }
 
-double computeFullStress(Graph& g)
+double computeFullStress(DotGraph& g)
 {
 	if (g.edges.size() <= 0) return UNDEF;
 
@@ -136,24 +136,24 @@ double computeFullStress(Graph& g)
 	assert(s > 0.0);
 	double stress = 0;
 	for (int i = 0; i < (int)g.nodes.size(); i++)
-		for (int j = i+1; j < (int)g.nodes.size(); j++)
+		for (int j = i + 1; j < (int)g.nodes.size(); j++)
 		{
-			Node* sn = g.nodes[i];
-			Node* tn = g.nodes[j];
+			DotNode* sn = g.nodes[i];
+			DotNode* tn = g.nodes[j];
 
 			double geomDistance = sn->getPos().Distance(tn->getPos());
 			double idealDistance = g.getShortestPath(sn, tn, true);
 			//not connected
 			if (idealDistance < 0) continue;
 
-			double delta = s*geomDistance - idealDistance;
+			double delta = s * geomDistance - idealDistance;
 			stress += Sqr2(delta) / Sqr2(idealDistance);
 		}
 
 	return stress;
 }
 
-double computeDistortion(Graph& g)
+double computeDistortion(DotGraph& g)
 {
 	if (g.edges.size() <= 0) return UNDEF;
 
@@ -163,50 +163,50 @@ double computeDistortion(Graph& g)
 
 	double sumAB = 0, sumA = 0, sumB = 0;
 	for (int i = 0; i < (int)g.nodes.size(); i++)
-		for (int j = i+1; j < (int)g.nodes.size(); j++)
+		for (int j = i + 1; j < (int)g.nodes.size(); j++)
 		{
-			Node* s = g.nodes[i];
-			Node* t = g.nodes[j];
+			DotNode* s = g.nodes[i];
+			DotNode* t = g.nodes[j];
 
 			double geomDistance = s->getPos().Distance(t->getPos());
 			double idealDistance = g.getShortestPath(s, t, true);
 			//not connected
 			if (idealDistance < 0) continue;
 
-			sumAB += (geomDistance - avgGeom)*(idealDistance - avgIdeal);
-			sumA += (geomDistance - avgGeom)*(geomDistance - avgGeom);
-			sumB += (idealDistance - avgIdeal)*(idealDistance - avgIdeal);
+			sumAB += (geomDistance - avgGeom) * (idealDistance - avgIdeal);
+			sumA += (geomDistance - avgGeom) * (geomDistance - avgGeom);
+			sumB += (idealDistance - avgIdeal) * (idealDistance - avgIdeal);
 		}
 
 	if (Abs(sumAB) < EPS) return 0.5;
 
-	double distortion = sumAB / (sqrt(sumA)*sqrt(sumB));
+	double distortion = sumAB / (sqrt(sumA) * sqrt(sumB));
 	//normalizing
-	return (1.0 + distortion)/2.0;
+	return (1.0 + distortion) / 2.0;
 }
 
-vector<Node*> findClosestNodes(Graph& g, int K, Node* s)
+vector<DotNode*> findClosestNodes(DotGraph& g, int K, DotNode* s)
 {
-	vector<pair<double, Node*> > distances;
+	vector<pair<double, DotNode*> > distances;
 	for (int i = 0; i < (int)g.nodes.size(); i++)
 	{
-		Node* t = g.nodes[i];
+		DotNode* t = g.nodes[i];
 		distances.push_back(make_pair(s->getPos().Distance(t->getPos()), t));
 	}
 
 	sort(distances.begin(), distances.end());
-	vector<Node*> res;
+	vector<DotNode*> res;
 	for (int i = 0; i < (int)distances.size() && i < K; i++)
 		res.push_back(distances[i].second);
 	return res;
 }
 
-double computeThreshold(Graph& g, int K, Node* s)
+double computeThreshold(DotGraph& g, int K, DotNode* s)
 {
-	vector<pair<double, Node*> > distances;
+	vector<pair<double, DotNode*> > distances;
 	for (int i = 0; i < (int)g.nodes.size(); i++)
 	{
-		Node* t = g.nodes[i];
+		DotNode* t = g.nodes[i];
 		double sp = g.getShortestPath(s, t, true);
 		if (sp == -1) continue;
 		distances.push_back(make_pair(sp, t));
@@ -214,10 +214,10 @@ double computeThreshold(Graph& g, int K, Node* s)
 
 	sort(distances.begin(), distances.end());
 	if ((int)distances.size() <= K) return distances.back().first;
-	return distances[K-1].first;
+	return distances[K - 1].first;
 }
 
-double computeNeigPreservation(Graph& g)
+double computeNeigPreservation(DotGraph& g)
 {
 	int K = 20;
 	if (g.edges.size() <= 0) return UNDEF;
@@ -225,9 +225,9 @@ double computeNeigPreservation(Graph& g)
 	double np = 0, cnt = 0;
 	for (int i = 0; i < (int)g.nodes.size(); i++)
 	{
-		Node* s = g.nodes[i];
+		DotNode* s = g.nodes[i];
 
-		vector<Node*> closestNodes = findClosestNodes(g, K, s);
+		vector<DotNode*> closestNodes = findClosestNodes(g, K, s);
 		double threshold = computeThreshold(g, K, s);
 
 		double good = 0, all = 0;
@@ -241,16 +241,16 @@ double computeNeigPreservation(Graph& g)
 
 		if (all > 0)
 		{
-			np += good/all;
+			np += good / all;
 			cnt++;
 		}
 	}
 
 	if (cnt == 0) return UNDEF;
-	return np/cnt;
+	return np / cnt;
 }
 
-Rectangle computeBoundingBox(const Graph& g)
+Rectangle computeBoundingBox(const DotGraph& g)
 {
 	if (g.nodes.size() <= 0) return Rectangle();
 
@@ -269,7 +269,7 @@ Rectangle computeBoundingBox(const Graph& g)
 	return Rectangle(pLB, pRT);
 }
 
-double computeUniform(const Graph& g)
+double computeUniform(const DotGraph& g)
 {
 	Rectangle bb = computeBoundingBox(g);
 
@@ -279,22 +279,23 @@ double computeUniform(const Graph& g)
 
 	double entropy = 0;
 	for (int i = 0; i < W; i++)
-		for (int j = 0; j < H; j++) {
-			double cellWidth = bb.getWidth()/W;
-			double cellHeight = bb.getHeight()/H;
-			Rectangle cell(bb.xl + cellWidth * i, bb.yl + cellHeight * j, bb.xl + cellWidth * (i+1), bb.yl + cellHeight * (j+1));
+		for (int j = 0; j < H; j++)
+		{
+			double cellWidth = bb.getWidth() / W;
+			double cellHeight = bb.getHeight() / H;
+			Rectangle cell(bb.xl + cellWidth * i, bb.yl + cellHeight * j, bb.xl + cellWidth * (i + 1), bb.yl + cellHeight * (j + 1));
 
 			//observed frequency (words inside cell)
 			double p = 0;
 			for (int k = 0; k < (int)g.nodes.size(); k++)
 				if (cell.contains(g.nodes[k]->getPos())) p++;
-			
+
 			p /= (double)g.nodes.size();
 			if (Abs(p) < EPS) continue;
 
 			//expected frequency
 			double q = (double) 1.0 / (W * H);
-				
+
 			entropy += p * log(p / q);
 		}
 
@@ -303,26 +304,7 @@ double computeUniform(const Graph& g)
 	return 1.0 - entropy / maxEntropy;
 }
 
-double computeCompactness(const Graph& g)
-{
-	Rectangle bb = computeBoundingBox(g);
-
-	double totalArea = bb.getWidth() * bb.getHeight();
-	if (Abs(totalArea) < EPS) return UNDEF;
-
-	double usedArea = 0;
-	for (int i = 0; i < (int)g.nodes.size(); i++)
-	{
-		double w = g.nodes[i]->getDoubleAttr("width");
-		double h = g.nodes[i]->getDoubleAttr("height");
-
-		usedArea += w*h;
-	}
-
-	return usedArea/totalArea;
-}
-
-double computeAspectRatio(const Graph& g)
+double computeAspectRatio(const DotGraph& g)
 {
 	if (g.nodes.size() <= 0) return UNDEF;
 
@@ -336,7 +318,7 @@ double computeAspectRatio(const Graph& g)
 	return mx / mn;
 }
 
-double computeCrossings(Graph& g, double& minCrossAngle, double& avgCrossAngle)
+double computeCrossings(DotGraph& g, double& minCrossAngle, double& avgCrossAngle)
 {
 	minCrossAngle = avgCrossAngle = UNDEF;
 	if (g.nodes.size() <= 0) return UNDEF;
@@ -345,15 +327,15 @@ double computeCrossings(Graph& g, double& minCrossAngle, double& avgCrossAngle)
 	VD crossAngles;
 	int cr = 0;
 	for (int i = 0; i < (int)g.edges.size(); i++)
-		for (int j = i+1; j < (int)g.edges.size(); j++)
+		for (int j = i + 1; j < (int)g.edges.size(); j++)
 		{
-			Edge* e1 = g.edges[i];
-			Edge* e2 = g.edges[j];
+			DotEdge* e1 = g.edges[i];
+			DotEdge* e2 = g.edges[j];
 
-			Node* s1 = g.findNodeById(e1->s);
-			Node* t1 = g.findNodeById(e1->t);
-			Node* s2 = g.findNodeById(e2->s);
-			Node* t2 = g.findNodeById(e2->t);
+			DotNode* s1 = g.findNodeById(e1->s);
+			DotNode* t1 = g.findNodeById(e1->t);
+			DotNode* s2 = g.findNodeById(e2->s);
+			DotNode* t2 = g.findNodeById(e2->t);
 
 			if (Segment::EdgesIntersect(s1->getPos(), t1->getPos(), s2->getPos(), t2->getPos()))
 			{
@@ -364,12 +346,12 @@ double computeCrossings(Graph& g, double& minCrossAngle, double& avgCrossAngle)
 			}
 		}
 
-	minCrossAngle = MinimumValue(crossAngles);
-	avgCrossAngle = AverageValue(crossAngles);
+	minCrossAngle = Minimum(crossAngles);
+	avgCrossAngle = Average(crossAngles);
 	return cr;
 }
 
-double computeModularity(Graph& g)
+double computeModularity(DotGraph& g)
 {
 	try
 	{
@@ -382,23 +364,25 @@ double computeModularity(Graph& g)
 			m += w;
 		}
 
-		for (int i = 0; i < (int)g.edges.size(); i++)
-		{
-			Node* s = g.findNodeById(g.edges[i]->s);
-			Node* t = g.findNodeById(g.edges[i]->t);
+		for (int i = 0; i < (int)g.nodes.size(); i++)
+			for (int j = 0; j < (int)g.nodes.size(); j++)
+			{
+				DotNode* s = g.nodes[i];
+				DotNode* t = g.nodes[j];
+				DotEdge* edge = g.findEdge(s, t);
 
-			string cluster_s = s->getAttr("cluster");
-			string cluster_t = t->getAttr("cluster");
-			if (cluster_s != cluster_t) continue;
+				string cluster_s = s->getAttr("cluster");
+				string cluster_t = t->getAttr("cluster");
+				if (cluster_s != cluster_t) continue;
 
-			double w = g.edges[i]->getWeight();
-			double deg_s = g.weightedDegree(s);
-			double deg_t = g.weightedDegree(t);
+				double w = (edge != NULL ? edge->getWeight() : 0);
+				double deg_t = g.weightedDegree(t);
+				double deg_s = g.weightedDegree(s);
 
-			res += (w - deg_s*deg_t/(2.0*m));
-		}
+				res += (w - deg_s * deg_t / (2.0 * m));
+			}
 
-		res /= (2.0*m);
+		res /= (2.0 * m);
 
 		return res;
 	}
@@ -409,7 +393,7 @@ double computeModularity(Graph& g)
 	}
 }
 
-double computeCoverage(Graph& g)
+double computeCoverage(DotGraph& g)
 {
 	try
 	{
@@ -418,8 +402,8 @@ double computeCoverage(Graph& g)
 
 		for (int i = 0; i < (int)g.edges.size(); i++)
 		{
-			Node* s = g.findNodeById(g.edges[i]->s);
-			Node* t = g.findNodeById(g.edges[i]->t);
+			DotNode* s = g.findNodeById(g.edges[i]->s);
+			DotNode* t = g.findNodeById(g.edges[i]->t);
 
 			string cluster_s = s->getAttr("cluster");
 			string cluster_t = t->getAttr("cluster");
@@ -431,7 +415,7 @@ double computeCoverage(Graph& g)
 		}
 
 		if (sumWeight < EPS) return UNDEF;
-		return res/sumWeight;
+		return res / sumWeight;
 	}
 	catch (int e)
 	{
@@ -440,7 +424,7 @@ double computeCoverage(Graph& g)
 	}
 }
 
-double computeConductance(Graph& g)
+double computeConductance(DotGraph& g)
 {
 	try
 	{
@@ -456,8 +440,8 @@ double computeConductance(Graph& g)
 		double sum_w = 0;
 		for (int i = 0; i < (int)g.edges.size(); i++)
 		{
-			Node* s = g.findNodeById(g.edges[i]->s);
-			Node* t = g.findNodeById(g.edges[i]->t);
+			DotNode* s = g.findNodeById(g.edges[i]->s);
+			DotNode* t = g.findNodeById(g.edges[i]->t);
 			string cluster_s = s->getAttr("cluster");
 			string cluster_t = t->getAttr("cluster");
 			double w = g.edges[i]->getWeight();
@@ -477,18 +461,18 @@ double computeConductance(Graph& g)
 		for (map<string, double>::iterator iter = clusterWeight.begin(); iter != clusterWeight.end(); iter++)
 		{
 			string cl = (*iter).first;
-			
+
 			double cut = intraEdges[cl];
 			double weight = (double)(*iter).second;
 
 			if (min(weight, sum_w - weight) < EPS) continue;
 
-			cond += cut/min(weight, sum_w - weight + cut);
+			cond += cut / min(weight, sum_w - weight + cut);
 			cnt++;
 		}
 
 		if (cnt < EPS) return UNDEF;
-		return 1.0 - cond/cnt;
+		return 1.0 - cond / cnt;
 	}
 	catch (int e)
 	{
@@ -497,25 +481,30 @@ double computeConductance(Graph& g)
 	}
 }
 
-Metrics computeMetrics(Graph& g)
+void Metrics::Compute(DotGraph& g)
 {
-	Metrics m;
-	m.n = g.nodes.size();
-	m.m = g.edges.size();
-	m.c = g.numberOfClusters();
+	ComputeLayout(g);
+	ComputeCluster(g);
+}
 
-	//m.sparseStress = computeSparseStress(g);
-	//m.fullStress = computeFullStress(g);
-	//m.distortion = computeDistortion(g);
-	//m.neigPreservation = computeNeigPreservation(g);
-	//m.compactness = computeCompactness(g);
-	//m.uniform = computeUniform(g);
-	//m.aspectRatio = computeAspectRatio(g);
-	//m.crossings = computeCrossings(g, m.minCrossAngle, m.avgCrossAngle);
+void Metrics::ComputeLayout(DotGraph& g)
+{
+	n = g.nodes.size();
+	m = g.edges.size();
+	c = g.ClusterCount();
 
-	m.modularity = computeModularity(g);
-	m.coverage = computeCoverage(g);
-	m.conductance = computeConductance(g);
+	sparseStress = computeSparseStress(g);
+	fullStress = computeFullStress(g);
+	distortion = computeDistortion(g);
+	neigPreservation = computeNeigPreservation(g);
+	uniform = computeUniform(g);
+	aspectRatio = computeAspectRatio(g);
+	crossings = computeCrossings(g, minCrossAngle, avgCrossAngle);
+}
 
-	return m;
+void Metrics::ComputeCluster(DotGraph& g)
+{
+	modularity = computeModularity(g);
+	coverage = computeCoverage(g);
+	conductance = computeConductance(g);
 }

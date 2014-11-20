@@ -1,7 +1,7 @@
-#include "common.h"
+#include "common/common.h"
 #include "clustering.h"
 
-double GraphHierarchical::computeAverageLength(ConnectedGraph& g, const VN& v1, const VN& v2)
+double GraphHierarchical::computeAverageLength(ConnectedDotGraph& g, const VN& v1, const VN& v2)
 {
 	VD avg;
 	for (int i = 0; i < (int)v1.size(); i++)
@@ -12,10 +12,10 @@ double GraphHierarchical::computeAverageLength(ConnectedGraph& g, const VN& v1, 
 		}
 
 	//return min(v1.size(), v2.size()) * AverageValue(avg);
-	return MaximumValue(avg);
+	return Maximum(avg);
 }
 
-vector<vector<Node*> > GraphHierarchical::cluster(ConnectedGraph& g, int K)
+vector<vector<DotNode*> > GraphHierarchical::cluster(ConnectedDotGraph& g, int K)
 {
 	assert(K >= 1);
 
@@ -33,7 +33,7 @@ vector<vector<Node*> > GraphHierarchical::cluster(ConnectedGraph& g, int K)
 		int bi = -1, bj = -1;
 		double bValue = -1;
 		for (int i = 0; i < (int)res.size(); i++)
-			for (int j = i+1; j < (int)res.size(); j++)
+			for (int j = i + 1; j < (int)res.size(); j++)
 			{
 				double avgLen = computeAverageLength(g, res[i], res[j]);
 				if (bValue == -1 || bValue > avgLen)

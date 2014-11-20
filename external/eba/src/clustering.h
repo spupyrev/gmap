@@ -1,12 +1,12 @@
-#pragma once 
+#pragma once
 
-#include "common.h"
-#include "graph.h"
+#include "common/common.h"
+#include "common/graph/dot_graph.h"
 
-typedef vector<Node*> VN;
+typedef vector<DotNode*> VN;
 typedef vector<VN> VVN;
 
-vector<vector<Node*> > clusterBetweenness(const Graph& g, int K);
+vector<vector<DotNode*> > clusterBetweenness(const DotGraph& g, int K);
 
 class ClusterAlgorithm
 {
@@ -14,55 +14,101 @@ public:
 	ClusterAlgorithm() {}
 	~ClusterAlgorithm() {}
 
-	virtual void cluster(Graph& g);
-	virtual void cluster(Graph& g, int K);
+	virtual void cluster(DotGraph& g);
+	virtual void cluster(DotGraph& g, int K);
 
 protected:
-	virtual VVN cluster(ConnectedGraph& g, int K) = 0;
+	virtual VVN cluster(ConnectedDotGraph& g, int K) = 0;
+};
 
-	double modularity(ConnectedGraph& g, const VVN&) const;
-	double modularity(ConnectedGraph& g, const VI&) const;
+class ClusteringInfo
+{
+	ConnectedDotGraph* g;
+	//index of node cluster, or -1 if the node is not present in G
+	VI cluster;
+	int clusterCount;
+	double modularity;
+
+	//twice the sum of all edge weights
+	double m2;
+
+	//sum of weights of all edges incident to a node in the cluster; inner edges are counted twice
+	VD sumTot;
+
+	//sum of weights of all edges inside the cluster
+	VD sumIn;
+
+public:
+	ClusteringInfo(ConnectedDotGraph* g, const VVN& groups);
+
+	inline int getClusterCount() const
+	{
+		return clusterCount;
+	}
+
+	inline int getCluster(const DotNode* v) const
+	{
+		return cluster[v->index];
+	}
+
+	inline double getModularity() const
+	{
+		return modularity;
+	}
+
+	VVN getGroups() const;
+	void moveVertex(const DotNode* v, int newCluster);
+	void checkConsistency();
+
+private:
+	double getModularitySlow() const;
+	double computeKiIn(const DotNode* v, int clusterId) const;
 };
 
 class GeometricKMeans: public ClusterAlgorithm
 {
-	VVN cluster(ConnectedGraph& g, int K);
+	VVN cluster(ConnectedDotGraph& g, int K);
 
-	Node* getNextMean(const VN& means, ConnectedGraph& g);
-	VN chooseCenters(ConnectedGraph& g, int K);
-	VVN groupPoints(const VN& means, ConnectedGraph& g);
-	Point computeMedian(const vector<Node*>& group);
-	VVN updateGroups(VVN& groups, ConnectedGraph& g);
+	DotNode* getNextMean(const VN& means, ConnectedDotGraph& g);
+	VN chooseCenters(ConnectedDotGraph& g, int K);
+	Point computeMedian(const vector<DotNode*>& group);
+
+	ClusteringInfo groupPoints(const VN& means, ConnectedDotGraph& g);
+	void updateClusters(ClusteringInfo& ci, ConnectedDotGraph& g);
 };
 
 class GraphKMeans: public ClusterAlgorithm
 {
-	VVN cluster(ConnectedGraph& g, int K);
+	VVN cluster(ConnectedDotGraph& g, int K);
 
-	Node* getNextMean(const VN& means, ConnectedGraph& g);
-	VN chooseCenters(ConnectedGraph& g, int K);
-	Node* computeMedian(const vector<Node*>& group, ConnectedGraph& g);
-	VVN groupPoints(const VN& means, ConnectedGraph& g);
-	VVN updateGroups(VVN& groups, ConnectedGraph& g);
+	DotNode* getNextMean(const VN& means, ConnectedDotGraph& g);
+	VN chooseCenters(ConnectedDotGraph& g, int K);
+	DotNode* computeMedian(const vector<DotNode*>& group, ConnectedDotGraph& g);
+
+	ClusteringInfo groupPoints(const VN& means, ConnectedDotGraph& g);
+	void updateClusters(ClusteringInfo& ci, ConnectedDotGraph& g);
 };
 
 class GeometricHierarchical: public ClusterAlgorithm
 {
-	VVN cluster(ConnectedGraph& g, int K);
+	VVN cluster(ConnectedDotGraph& g, int K);
 
-	double computeAverageLength(ConnectedGraph& g, const VN& v1, const VN& v2);
+	double computeAverageLength(ConnectedDotGraph& g, const VN& v1, const VN& v2);
 };
 
 class GraphHierarchical: public ClusterAlgorithm
 {
-	VVN cluster(ConnectedGraph& g, int K);
+	VVN cluster(ConnectedDotGraph& g, int K);
 
-	double computeAverageLength(ConnectedGraph& g, const VN& v1, const VN& v2);
+	double computeAverageLength(ConnectedDotGraph& g, const VN& v1, const VN& v2);
 };
 
 class InfoMap: public ClusterAlgorithm
 {
-	void cluster(Graph& g);
-	void cluster(Graph& g, int K);
-	VVN cluster(ConnectedGraph& g, int K) {return VVN();}
+	void cluster(DotGraph& g);
+	void cluster(DotGraph& g, int K);
+	VVN cluster(ConnectedDotGraph& g, int K)
+	{
+		return VVN();
+	}
 };

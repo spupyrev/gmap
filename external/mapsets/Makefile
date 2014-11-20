@@ -1,25 +1,37 @@
 # Variables
 
 CXX = g++
-CXXFLAGS = -Wall -O2 -std=c++11
+CXXFLAGS = -Isrc -Wall -Wno-unknown-pragmas -pipe -O3 -std=c++11
 
-OBJ = main.o colors.o common.o comparer.o debug_utils.o fd_adjustment.o geom_utils.o graph_algorithms.o random_utils.o \
-		rectangle_node.o svg_utils.o test_visibility.o tests.o time_utils.o visibility.o visibility_utils.o
+HEADERS = $(wildcard **/*.h)
 
+## don't know how to make it recursive on windows :(
+SOURCES = $(wildcard src/*.cpp) $(wildcard src/*/*.cpp) $(wildcard src/*/*/*.cpp)
 
 # Targets
 
-main: $(OBJ)
-	$(CXX) $(CXXFLAGS) -o mapsets $(OBJ)
+TARGET = mapsets
 
+OBJECTS = $(SOURCES:src/%.cpp=build/%.o)
 
-main.o: main.cpp
-	$(CXX) $(CXXFLAGS) -c main.cpp
-	
+## Default rule executed
+all: $(TARGET)
+	@true
 
+## Clean Rule
+clean:
+	$(RM) $(TARGET) $(OBJECTS)
 
-clean :
-	rm -f $(OBJ)
-	rm -f mapsets
-	rm -f mapsets.exe
-	
+noomp: $(TARGET)
+	@true
+
+## Rule for making the actual target
+$(TARGET): $(OBJECTS)
+	@echo "Linking object files to target $@..."
+	$(CXX) $(LDFLAGS) -o $@ $^
+	@echo "-- Link finished --"
+
+## Generic compilation rule for object files from cpp files
+build/%.o : src/%.cpp $(HEADERS) Makefile
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@

@@ -1,44 +1,46 @@
-#include "common.h"
+#include "common/common.h"
+#include "common/random_utils.h"
+
 #include "clustering.h"
 
-Node* GraphKMeans::getNextMean(const vector<Node*>& means, ConnectedGraph& g)
+DotNode* GraphKMeans::getNextMean(const vector<DotNode*>& means, ConnectedDotGraph& g)
 {
 	VD minDist;
 	for (int i = 0; i < (int)g.nodes.size(); i++)
 	{
-        double minD = 123456789.0;
+		double minD = 123456789.0;
 		for (int j = 0; j < (int)means.size(); j++)
-        {
+		{
 			double d = g.getShortestPath(g.nodes[i], means[j], true);
 			minD = min(minD, d);
-        }
+		}
 
 		minDist.push_back(Sqr2(minD));
-    }
+	}
 
-	int p = ChooseRandomWithProbability(minDist);
+	int p = randWithProbability(minDist);
 	if (minDist[p] < 1e-6) return NULL;
 
 	return g.nodes[p];
 }
 
-vector<Node*> GraphKMeans::chooseCenters(ConnectedGraph& g, int K)
+vector<DotNode*> GraphKMeans::chooseCenters(ConnectedDotGraph& g, int K)
 {
-	vector<Node*> centers;
+	vector<DotNode*> centers;
 
-	int i = rand()%g.nodes.size();
+	int i = randInt(g.nodes.size());
 	centers.push_back(g.nodes[i]);
 
 	for (int i = 1; i < K; i++)
 	{
-		Node* p = getNextMean(centers, g);
+		DotNode* p = getNextMean(centers, g);
 		if (p != NULL) centers.push_back(p);
 	}
 
 	return centers;
 }
 
-Node* GraphKMeans::computeMedian(const vector<Node*>& group, ConnectedGraph& g)
+DotNode* GraphKMeans::computeMedian(const vector<DotNode*>& group, ConnectedDotGraph& g)
 {
 	double dmin = -1;
 	int bestIndex = -1;
@@ -61,10 +63,10 @@ Node* GraphKMeans::computeMedian(const vector<Node*>& group, ConnectedGraph& g)
 	return group[bestIndex];
 }
 
-vector<vector<Node*> > GraphKMeans::groupPoints(const vector<Node*>& means, ConnectedGraph& g)
+ClusteringInfo GraphKMeans::groupPoints(const vector<DotNode*>& means, ConnectedDotGraph& g)
 {
 	VVN groups = VVN(means.size(), VN());
-	vector<Node*> median;
+	vector<DotNode*> median;
 	for (int i = 0; i < (int)means.size(); i++)
 		median.push_back(means[i]);
 
@@ -95,7 +97,7 @@ vector<vector<Node*> > GraphKMeans::groupPoints(const vector<Node*>& means, Conn
 		bool progress = false;
 		for (int i = 0; i < (int)median.size(); i++)
 		{
-			Node* newMedian = computeMedian(groups[i], g);
+			DotNode* newMedian = computeMedian(groups[i], g);
 			if (median[i] != newMedian) progress = true;
 			median[i] = newMedian;
 		}
@@ -103,20 +105,11 @@ vector<vector<Node*> > GraphKMeans::groupPoints(const vector<Node*>& means, Conn
 		if (!progress) break;
 	}
 
-    return groups;
+	return ClusteringInfo(&g, groups);
 }
 
-vector<vector<Node*> > GraphKMeans::updateGroups(VVN& groups, ConnectedGraph& g)
+void GraphKMeans::updateClusters(ClusteringInfo& ci, ConnectedDotGraph& g)
 {
-	VI clusterSize;
-	VI cl = VI(g.maxNodeIndex(), -1);
-	for (int i = 0; i < (int)groups.size(); i++)
-	{
-		clusterSize.push_back(groups[i].size());
-		for (int j = 0; j < (int)groups[i].size(); j++)
-			cl[groups[i][j]->index] = i;
-	}
-
 	//reassign clusters
 	bool progress = true;
 	for (int t = 0; t < 30 && progress; t++)
@@ -124,55 +117,39 @@ vector<vector<Node*> > GraphKMeans::updateGroups(VVN& groups, ConnectedGraph& g)
 		progress = false;
 		for (int i = 0; i < (int)g.nodes.size(); i++)
 		{
-			Node* v = g.nodes[i];
-			//weight in i-th cluster
-			VD wSum = VD(groups.size(), 0);
-			vector<pair<Node*, Edge*> > adj = g.getAdj(v);
-			for (int j = 0; j < (int)adj.size(); j++)
+			DotNode* v = g.nodes[i];
+			double oldModularity = ci.getModularity();
+
+			//try to find the best new cluster
+			int bestCluster = ci.getCluster(v);
+			double bestModularity = oldModularity;
+			for (int j = 0; j < ci.getClusterCount(); j++)
 			{
-				Node* u = adj[j].first;
-				Edge* edge = adj[j].second;
-				wSum[cl[u->index]] += edge->getWeight();
+				if (j == ci.getCluster(v)) continue;
+
+				ci.moveVertex(v, j);
+				double newModularity = ci.getModularity();
+
+				if (newModularity > bestModularity)
+				{
+					bestModularity = newModularity;
+					bestCluster = j;
+				}
 			}
 
-			//find best cluster
-			int bestNewCluster = cl[v->index];
-			for (int j = 0; j < (int)groups.size(); j++)
+			if (bestCluster != ci.getCluster(v))
 			{
-				if (j == cl[v->index]) continue;
-				if (clusterSize[j] == 0) continue;
-
-				double wj = 1.0/sqrt((double)clusterSize[j]);
-				double wb = 1.0/sqrt((double)clusterSize[bestNewCluster]);
-				//double wj = 1.0/(double)clusterSize[j];
-				//double wb = 1.0/(double)clusterSize[bestNewCluster];
-
-				if (wSum[j]*wj > wSum[bestNewCluster]*wb) 
-					bestNewCluster = j;
+				ci.moveVertex(v, bestCluster);
 			}
 
-			if (bestNewCluster != cl[v->index])
-			{
-				clusterSize[cl[v->index]]--;
-				clusterSize[bestNewCluster]++;
-
-				cl[v->index] = bestNewCluster;
+			if (bestModularity > oldModularity) 
 				progress = true;
-			}
 		}
+		//ci.checkConsistency();
 	}
-
-	vector<vector<Node*> > groupsRes = vector<vector<Node*> >(groups.size(), vector<Node*>());
-	for (int i = 0; i < (int)g.nodes.size(); i++)
-	{
-		Node* v = g.nodes[i];
-		groupsRes[cl[v->index]].push_back(v);
-	}
-
-    return groupsRes;
 }
 
-vector<vector<Node*> > GraphKMeans::cluster(ConnectedGraph& g, int K)
+vector<vector<DotNode*> > GraphKMeans::cluster(ConnectedDotGraph& g, int K)
 {
 	assert(K >= 1);
 
@@ -181,20 +158,16 @@ vector<vector<Node*> > GraphKMeans::cluster(ConnectedGraph& g, int K)
 
 	for (int attempt = 0; attempt < 10; attempt++)
 	{
-		vector<Node*> centers = chooseCenters(g, K);
+		vector<DotNode*> centers = chooseCenters(g, K);
 
-		vector<vector<Node*> > groups = groupPoints(centers, g);
-		groups = updateGroups(groups, g);
+		ClusteringInfo clusterInfo = groupPoints(centers, g);
+		updateClusters(clusterInfo, g);
 
-		vector<vector<Node*> > resGroups;
-		for (int i = 0; i < (int)groups.size(); i++)
-			if (groups[i].size() > 0) resGroups.push_back(groups[i]);
-
-		double value = modularity(g, resGroups);
+		double value = clusterInfo.getModularity();
 		if (bestValue == -1 || bestValue < value)
 		{
 			bestValue = value;
-			res = resGroups;
+			res = clusterInfo.getGroups();
 		}
 	}
 

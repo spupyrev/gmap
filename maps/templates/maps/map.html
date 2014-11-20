@@ -29,7 +29,8 @@ function opacity_slider_change(event, ui) {
     $('.edge').children('path').attr('opacity', opacity);
 }
 
-var ZOOM_LEVELS = 4;
+var SVG_ZOOM_LEVELS = 4;
+var VIEW_ZOOM_LEVELS = 5;
 
 function get_map(delay) {
     $.ajax({
@@ -48,7 +49,7 @@ function get_map(delay) {
 	            else
 	            {
 	            	var urls = new Array();
-	            	for (var i = 0; i < ZOOM_LEVELS; i++)
+	            	for (var i = 0; i < SVG_ZOOM_LEVELS; i++)
 	            		urls.push("{% url 'maps:get_map_zoomed' task.id %}?zoom=" + i);
 
 	            	display_map_with_zoom(urls, task.width, task.height);
@@ -73,18 +74,25 @@ function get_map(delay) {
 }
 
 function display_map(map_url, width, height) {
+	var scale0 = Math.max(height/(window.innerHeight - 80), width/(window.innerWidth));
+	var S = 0.7;
+	var res = [scale0];
+	for (var i = 1; i < VIEW_ZOOM_LEVELS; i++)
+		res.push(res[i-1] * S);
+
     var bounds = new OpenLayers.Bounds(0, -1 * height, width, 0);
     map_options = {
         controls:[
             new OpenLayers.Control.Navigation(),
             new OpenLayers.Control.PanZoomBar(),
                 ],
-        maxExtent: bounds,
+        //maxExtent: bounds,
         //minExtent: new OpenLayers.Bounds(0, -1 * height/2, width/2, 0),
-        numZoomLevels: 6,
+        //numZoomLevels: 6,
         fractionalZoom: true,
+        resolutions: res,
     }
-    map = new OpenLayers.Map ("map", map_options);
+    map = new OpenLayers.Map("map", map_options);
 
     var gmap = new OpenLayers.Layer.ScalableInlineXhtml(
         "GMap",
@@ -100,20 +108,27 @@ function display_map(map_url, width, height) {
 } 
 
 function display_map_with_zoom(map_urls, width, height) {
+	var scale0 = Math.max(height/(window.innerHeight - 80), width/(window.innerWidth));
+	var S = 0.7;
+	var res = [scale0];
+	for (var i = 1; i < VIEW_ZOOM_LEVELS; i++)
+		res.push(res[i-1] * S);
+
     var bounds = new OpenLayers.Bounds(0, -1 * height, width, 0);
     map_options = {
         controls:[
             new OpenLayers.Control.Navigation(),
             new OpenLayers.Control.PanZoomBar(),
                 ],
-        maxExtent: bounds,
-        numZoomLevels: 6,
+        //maxExtent: bounds,
+        //numZoomLevels: 5,
         fractionalZoom: true,
+        resolutions: res,
     }
     map = new OpenLayers.Map ("map", map_options);
 
     var gmaps = new Array();
-    for (var i = 0; i < ZOOM_LEVELS; i++)
+    for (var i = 0; i < SVG_ZOOM_LEVELS; i++)
     {
 	    var gmap = new OpenLayers.Layer.ScalableInlineXhtml(
 	        "GMap",

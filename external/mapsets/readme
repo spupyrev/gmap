@@ -1,0 +1,7 @@
+Usage: mapsets [options]
+Allowed options:
+  -i=value       : input file (stdin, if no input file is supplied)
+  -o=value       : output file (stdout, if no output file is supplied)
+
+Examples: 
+	mapsets -o=out.gv -i=sample.gv

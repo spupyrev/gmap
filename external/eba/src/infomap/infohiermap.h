@@ -1,16 +1,16 @@
 #pragma once
 
-#define PLOGP(p) (p > 0.0 ? (p*log(p)) : 0.0)
+#include "greedy.h"
+#include "imnode.h"
 
-#include <fstream>
-
-#include "Greedy.h" 
-#include "IMNode.h" 
-
-#include "../common.h"
-#include "../graph.h"
+#include "common/common.h"
+#include "common/graph/dot_graph.h"
 
 using namespace std;
+
+namespace infomap {
+
+#define PLOGP(p) (p > 0.0 ? (p*log(p)) : 0.0)
 
 struct TreeNode
 {
@@ -19,7 +19,7 @@ struct TreeNode
 	set<int> members;
 	//  vector<int> cluster; // Two-level partition
 	vector<int> rev_renumber; // Vectors to reorganize node numbers
-	map<int,int> renumber;
+	map<int, int> renumber;
 	multimap<double, TreeNode, greater<double> > nextLevel;
 };
 
@@ -27,7 +27,7 @@ struct PrintTreeNode
 {
 	int rank;
 	double size;
-	multimap<double,int,greater<double> > members;
+	multimap<double, int, greater<double> > members;
 };
 
 struct TreeStats
@@ -40,4 +40,6 @@ struct TreeStats
 	double aveSize;
 };
 
-vector<vector<Node*> > runInfomap(ConnectedGraph& g, int trials, double rec);
+vector<vector<DotNode*> > runInfomap(ConnectedDotGraph& g, int trials, double rec);
+
+} // namespace infomap

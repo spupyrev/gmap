@@ -107,9 +107,9 @@ def run_clustering(task, cluster_algorithm, dot_out):
 		set_status(task, 'making map contiguous')
 		return call_process(ceba_command(), dot_out)
 	elif cluster_algorithm == 'modularity':
-		return call_process(graphviz_command_gmap(task.color_scheme), dot_out)
+		return call_process(cluster_command('modularity'), dot_out)
 	elif cluster_algorithm == 'cont-modularity':
-		dot_out = call_process(graphviz_command_gmap(task.color_scheme), dot_out)
+		dot_out = call_process(cluster_command('modularity'), dot_out)
 		set_status(task, 'making map contiguous')
 		return call_process(ceba_command(), dot_out)
 

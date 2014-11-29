@@ -1,7 +1,7 @@
 # Variables
 
 CXX = g++
-CXXFLAGS = -Isrc -Wall -Wno-unknown-pragmas -pipe -O3 -std=c++11
+CXXFLAGS = -Isrc -Wall -Wno-unknown-pragmas -O3 -std=c++11
 
 HEADERS = $(wildcard **/*.h)
 

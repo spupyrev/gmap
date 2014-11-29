@@ -1,11 +1,15 @@
-Usage: kmeans [options]
-Allowed options:
-  -C=value       : type of clustering [geometrickmeans|graphkmeans|geometrichierarchical|graphhierarchical|infomap]
-  -K=value       : desired number of clusters (selected automatically, if no value is supplied)
-  -action=value  : action [clustering|metrics]
-  -i=value       : input file (stdin, if no input file is supplied)
-  -o=value       : output file (stdout, if no output file is supplied)
+Usage: kmeans [options] input_file
+When input_file is not supplied, the program reads from stdin.
 
-Examples: 
-	kmeans -action=clustering -o=out.gv -K=20 -C=geometrickmeans -i=sample.gv
-	kmeans -action=metrics -i=sample.gv
+Allowed options:
+  -o
+  Output file name (stdout, if no output file is supplied)
+
+  -action=[clustering|metrics]
+  The program either computes a clustering a given graph or calculates a set of quality measures (aesthetics)
+
+  -C=[geometrickmeans|graphkmeans|geometrichierarchical|graphhierarchical|infomap|modularity]
+  Type of clustering
+
+  -K
+  Desired number of clusters (selected automatically, if no value is supplied)

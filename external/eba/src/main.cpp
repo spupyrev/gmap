@@ -8,22 +8,51 @@
 #include "clustering.h"
 #include "metrics.h"
 
-void MetricsAction(const CMDOptions* args)
+#include <memory>
+
+void PrepareCMDOptions(int argc, char** argv, CMDOptions& args)
+{
+	string msg;
+	msg += "Usage: kmeans [options] input_file\n";
+	msg += "When input_file is not supplied, the program reads from stdin.\n";
+	args.SetUsageMessage(msg);
+
+	args.AddAllowedOption("", "", "Input file name (stdin, if no input file is supplied)");
+	args.AddAllowedOption("-o", "", "Output file name (stdout, if no output file is supplied)");
+
+	args.AddAllowedOption("-action", "", "The program either computes a clustering for a given graph or calculates a set of quality measures (aesthetics)");
+	args.AddAllowedValue("-action", "clustering");
+	args.AddAllowedValue("-action", "metrics");
+
+	args.AddAllowedOption("-C", "Type of clustering");
+	args.AddAllowedValue("-C", "geometrickmeans");
+	args.AddAllowedValue("-C", "graphkmeans");
+	args.AddAllowedValue("-C", "geometrichierarchical");
+	args.AddAllowedValue("-C", "graphhierarchical");
+	args.AddAllowedValue("-C", "infomap");
+	args.AddAllowedValue("-C", "modularity");
+
+	args.AddAllowedOption("-K", "", "Desired number of clusters (selected automatically, if no value is supplied)");
+
+	args.Parse(argc, argv);
+} 
+
+void MetricsAction(const CMDOptions& options)
 {
 	DotReader parser;
-	DotGraph g = parser.ReadGraph(args->getOption("-i"));
+	DotGraph g = parser.ReadGraph(options.getOption(""));
 
 	Metrics m;
 	m.Compute(g);
-	m.Output(args->getOption("-o"));
+	m.Output(options.getOption("-o"));
 }
 
-void ClusteringAction(const CMDOptions* args)
+void ClusteringAction(const CMDOptions& options)
 {
 	DotReader parser;
-	DotGraph g = parser.ReadGraph(args->getOption("-i"));
+	DotGraph g = parser.ReadGraph(options.getOption(""));
 
-	string algoName = args->getOption("-C");
+	string algoName = options.getOption("-C");
 	ClusterAlgorithm* algo = NULL;
 
 	if (algoName == "geometrickmeans")
@@ -36,10 +65,10 @@ void ClusteringAction(const CMDOptions* args)
 		algo = new GraphHierarchical();
 	else if (algoName == "infomap")
 		algo = new InfoMap();
-	else
-		args->InvalidOption("-C");
+	else if (algoName == "modularity")
+		algo = new Modularity();
 
-	string numberOfClusters = args->getOption("-K");
+	string numberOfClusters = options.getOption("-K");
 	if (numberOfClusters == "graph")
 	{
 		int k = g.ClusterCount();
@@ -58,43 +87,33 @@ void ClusteringAction(const CMDOptions* args)
 	delete algo;
 
 	DotWriter writer;
-	writer.WriteGraph(args->getOption("-o"), g);
-}
-
-CMDOptions* PrepareCMDOptions(int argc, char **argv)
-{
-	CMDOptions* args = new CMDOptions();
-	args->AddAllowedOption("-action", "  -action=value  : action [clustering|metrics]");
-	args->AddAllowedOption("-i", "",  "  -i=value       : input file (stdin, if no input file is supplied)");
-	args->AddAllowedOption("-o", "",  "  -o=value       : output file (stdout, if no output file is supplied)");
-	args->AddAllowedOption("-C",	  "  -C=value       : type of clustering [geometrickmeans|graphkmeans|geometrichierarchical|graphhierarchical|infomap]");
-	args->AddAllowedOption("-K", "",  "  -K=value       : desired number of clusters (selected automatically, if no value is supplied)");
-
-	args->Parse(argc, argv);
-	return args;
+	writer.WriteGraph(options.getOption("-o"), g);
 }
 
 int main(int argc, char **argv)
 {
 	InitRand(123);
 
-	CMDOptions* args = PrepareCMDOptions(argc, argv);
+	auto options = unique_ptr<CMDOptions>(new CMDOptions());
 
-	string action = args->getOption("-action");
-	if (action == "clustering")
+	int returnCode = 0;
+	try
 	{
-		ClusteringAction(args);
+		PrepareCMDOptions(argc, argv, *options);
+		string action = options->getOption("-action");
+		if (action == "clustering")
+		{
+			ClusteringAction(*options);
+		}
+		else if (action == "metrics")
+		{
+			MetricsAction(*options);
+		}
 	}
-	else if (action == "metrics")
+	catch (int code)
 	{
-		MetricsAction(args);
-	}
-	else
-	{
-		args->InvalidOption("-action");
+		returnCode = code;		
 	}
 
-	delete args;
-
-	return 0;
+	return returnCode;
 }

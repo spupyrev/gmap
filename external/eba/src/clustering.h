@@ -12,7 +12,7 @@ class ClusterAlgorithm
 {
 public:
 	ClusterAlgorithm() {}
-	~ClusterAlgorithm() {}
+	virtual ~ClusterAlgorithm() {}
 
 	virtual void cluster(DotGraph& g);
 	virtual void cluster(DotGraph& g, int K);
@@ -104,6 +104,16 @@ class GraphHierarchical: public ClusterAlgorithm
 };
 
 class InfoMap: public ClusterAlgorithm
+{
+	void cluster(DotGraph& g);
+	void cluster(DotGraph& g, int K);
+	VVN cluster(ConnectedDotGraph& g, int K)
+	{
+		return VVN();
+	}
+};
+
+class Modularity: public ClusterAlgorithm
 {
 	void cluster(DotGraph& g);
 	void cluster(DotGraph& g, int K);

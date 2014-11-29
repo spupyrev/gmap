@@ -175,6 +175,7 @@ public:
 	vector<DotNode*> nodes;
 	vector<DotEdge*> edges;
 
+	//make it all mutable!!!
 	map<string, vector<DotNode*> > clusters;
 	VVI adj;
 	VVI adjE;

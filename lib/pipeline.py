@@ -107,9 +107,9 @@ def run_clustering(task, cluster_algorithm, dot_out):
 		set_status(task, 'making map contiguous')
 		return call_process(ceba_command(), dot_out)
 	elif cluster_algorithm == 'modularity':
-		return call_process(cluster_command('modularity'), dot_out)
+		return call_process(graphviz_command_gmap(task.color_scheme), dot_out)
 	elif cluster_algorithm == 'cont-modularity':
-		dot_out = call_process(cluster_command('modularity'), dot_out)
+		dot_out = call_process(graphviz_command_gmap(task.color_scheme), dot_out)
 		set_status(task, 'making map contiguous')
 		return call_process(ceba_command(), dot_out)
 
@@ -186,9 +186,12 @@ def call_graphviz_int(task):
 
     elif vis_type == 'map-sets':
     	dot_out = run_layout(task, layout_algorithm, map_string)
-    	dot_out = run_clustering(task, 'cont-modularity', dot_out)
+    	dot_out = run_clustering(task, cluster_algorithm, dot_out)
+    	set_status(task, 'making map contiguous')
+    	dot_out = call_process(ceba_command(), dot_out)
 
     	set_status(task, 'creating map sets')
+    	#log.debug('MapSets-Input: %s' %(dot_out))
     	dot_out = call_process(mapsets_command(), dot_out)
     	dot_out = call_process(mapsets_post_command(task.color_scheme), dot_out)
 

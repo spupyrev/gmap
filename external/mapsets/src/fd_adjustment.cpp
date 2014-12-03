@@ -217,7 +217,7 @@ bool TryMoveNodes(RoutingGraph& vg, double step)
     return coordinatesChanged;
 }
 
-void ForceDirectedAdjustment(const DotGraph& g, map<string, SegmentTree*>& trees)
+void ForceDirectedAdjustment(const DotGraph& g, map<string, SegmentSet*>& trees)
 {
 	double step = MaxStep;
 	double energy = INF;

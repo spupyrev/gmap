@@ -175,6 +175,7 @@ public:
 	vector<DotNode*> nodes;
 	vector<DotEdge*> edges;
 
+	//make it all mutable!!!
 	map<string, vector<DotNode*> > clusters;
 	VVI adj;
 	VVI adjE;
@@ -208,7 +209,7 @@ public:
 
 	void OutputStatistics()
 	{
-		cout << "#nodes = " << nodes.size() << "  #edges = " << edges.size() << "\n";
+		cout << "#nodes = " << nodes.size() << "  #edges = " << edges.size() << "  #clusters = " << ClusterCount() << endl;
 	}
 
 	void assignClusters(vector<vector<DotNode*> >& clust, int first)

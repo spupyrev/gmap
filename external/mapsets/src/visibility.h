@@ -5,7 +5,7 @@
 #include "common/geometry/segment.h"
 #include "common/graph/dot_graph.h"
 
-#include "segment_tree.h"
+#include "segment_set.h"
 
 struct VisibilityVertex
 {
@@ -19,14 +19,15 @@ struct VisibilityVertex
 	VisibilityVertex(Point p, bool real, int index): index(index), p(p), real(real) {}
 };
 
-typedef VisibilityVertex VV;
-
 class VisibilityGraph
 {
-	VisibilityGraph(const VisibilityGraph&) {}
-	void operator = (const VisibilityGraph&) {}
+private:
+	VisibilityGraph(const VisibilityGraph&);
+	VisibilityGraph& operator = (const VisibilityGraph&);
 
 	void Initialze(const vector<Point>& points, const vector<Segment>& obstacles);
+	vector<VisibilityVertex> CreateVisibilityVertices(const vector<Point>& p, const vector<Segment>& obstacles);
+	vector<vector<int> > CreateVisibilityEdges(const vector<VisibilityVertex>& vis, const vector<Segment>& obstacles);
 
 public:
 	vector<VisibilityVertex> nodes;
@@ -41,12 +42,12 @@ public:
 };
 
 
-class TreeAlgorithm
+class CESTAlgorithm
 {
 public:
-	map<string, SegmentTree*> BuildTrees(DotGraph& g);
+	map<string, SegmentSet*> BuildTrees(DotGraph& g);
 
-	double TreeLength(map<string, SegmentTree*>& trees) const
+	double TreeLength(map<string, SegmentSet*>& trees) const
 	{
 		double res = 0;
 		for (auto iter = trees.begin(); iter != trees.end(); iter++)
@@ -54,7 +55,7 @@ public:
 		return res;
 	}
 
-	void CheckTreeConnected(SegmentTree* tree, vector<Point>& points, vector<Segment>& obstacles) const
+	void CheckTreeConnected(SegmentSet* tree, vector<Point>& points, vector<Segment>& obstacles) const
 	{
 		VisibilityGraph visGraph(points, obstacles);
 

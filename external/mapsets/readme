@@ -1,7 +1,6 @@
-Usage: mapsets [options]
-Allowed options:
-  -i=value       : input file (stdin, if no input file is supplied)
-  -o=value       : output file (stdout, if no output file is supplied)
+Usage: mapsets [options] input_file
+When input_file is not supplied, the program reads from stdin.
 
-Examples: 
-	mapsets -o=out.gv -i=sample.gv
+Allowed options:
+  -o
+  Output file name (stdout, if no output file is supplied)

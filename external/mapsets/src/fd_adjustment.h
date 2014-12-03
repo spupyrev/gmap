@@ -5,9 +5,9 @@
 #include "common/geometry/geometry_utils.h"
 #include "common/graph/dot_graph.h"
 
-#include "segment_tree.h"
+#include "segment_set.h"
 
-void ForceDirectedAdjustment(const DotGraph& g, map<string, SegmentTree*>& trees);
+void ForceDirectedAdjustment(const DotGraph& g, map<string, SegmentSet*>& trees);
 
 class RoutingGraph;
 
@@ -48,13 +48,13 @@ class RoutingGraph
 	vector<Rectangle> hardObstacles;
 
 public:
-	RoutingGraph(const DotGraph& g, const map<string, SegmentTree*>& trees)
+	RoutingGraph(const DotGraph& g, const map<string, SegmentSet*>& trees)
 	{
 		//cut long tree segments
 		for (auto iter = trees.begin(); iter != trees.end(); iter++)
 		{
 			string cluster = (*iter).first;
-			SegmentTree* tree = (*iter).second;
+			SegmentSet* tree = (*iter).second;
 			vector<Segment> newTree;
 
 			for (int i = 0; i < tree->count(); i++)
@@ -84,7 +84,7 @@ public:
 		for (auto iter = trees.begin(); iter != trees.end(); iter++)
 		{
 			string cluster = (*iter).first;
-			SegmentTree* tree = (*iter).second;
+			SegmentSet* tree = (*iter).second;
 
 			for (int i = 0; i < tree->count(); i++)
 			{
@@ -178,13 +178,13 @@ public:
 		return ink;
 	}
 
-	void UpdateTrees(map<string, SegmentTree*>& trees)
+	void UpdateTrees(map<string, SegmentSet*>& trees)
 	{
 		//remove old
 		for (auto iter = trees.begin(); iter != trees.end(); iter++)
 		{
 			string cluster = (*iter).first;
-			SegmentTree* tree = (*iter).second;
+			SegmentSet* tree = (*iter).second;
 			vector<Segment> segsToAdd;
 			for (int i = 0; i < tree->count(); i++)
 			{
@@ -212,7 +212,7 @@ public:
 				string cl = (node->isVirtual ? node->cluster : adj->cluster);
 				if (cl != "") 
 				{
-					SegmentTree* tree = trees[cl];
+					SegmentSet* tree = trees[cl];
 					if (tree->contains(seg)) continue;
 					tree->append(seg);
 				}

@@ -1,18 +1,18 @@
 #include "common/geometry/geometry_utils.h"
+#include "common/geometry/rtree.h"
 
 #include "visibility.h"
 #include "graph_algorithms.h"
-#include "rtree.h"
 #include "closest_point.h"
 
-typedef vector<Point> VP;
+#define FULL_VISIBILITY 0
 
-vector<VV> CreateVisibilityVertices(const vector<Point>& p, const vector<Segment>& obstacles);
-vector<vector<int> > CreateVisibilityEdges(const vector<VV>& vis, const vector<Segment>& obstacles);
+typedef RNode<Segment> SegNode;
+typedef RTree<Segment> SegTree;
 
-bool IsVisible(const VV& s, const VV& t, const vector<Segment>& obstacles, RTree* obstacleTreeRoot);
-bool IsInCone(const VV& cone, const Point& p);
-bool Intersect(const VV& s, const VV& t, const Segment& seg);
+bool IsVisible(const VisibilityVertex& s, const VisibilityVertex& t, const SegTree& obstacleTree);
+bool IsInCone(const VisibilityVertex& cone, const Point& p);
+bool Intersect(const VisibilityVertex& s, const VisibilityVertex& t, const Segment& seg);
 
 void VisibilityGraph::Initialze(const vector<Point>& p, const vector<Segment>& obstacles)
 {
@@ -31,13 +31,13 @@ struct ClockwiseComparator
 	}
 } comparator;
 
-vector<VV> CreateVisibilityVertices(const vector<Point>& p, const vector<Segment>& obstacles)
+vector<VisibilityVertex> VisibilityGraph::CreateVisibilityVertices(const vector<Point>& p, const vector<Segment>& obstacles)
 {
-	vector<VV> res;
+	vector<VisibilityVertex> res;
 	//adding regular points
 	for (int i = 0; i < (int)p.size(); i++)
 	{
-		res.push_back(VV(p[i], true, res.size()));
+		res.push_back(VisibilityVertex(p[i], true, res.size()));
 	}
 
 	//adding obstacles corners
@@ -54,7 +54,7 @@ vector<VV> CreateVisibilityVertices(const vector<Point>& p, const vector<Segment
 	for (auto iter = neig.begin(); iter != neig.end(); iter++)
 	{
 		Point p = (*iter).first;
-		VP adj = VP((*iter).second.begin(), (*iter).second.end());
+		vector<Point> adj = vector<Point>((*iter).second.begin(), (*iter).second.end());
 		assert(!adj.empty());
 
 		//sort clockwise
@@ -65,7 +65,7 @@ vector<VV> CreateVisibilityVertices(const vector<Point>& p, const vector<Segment
 
 		for (int i = 0; i < (int)adj.size(); i++)
 		{
-			VV v(p, false, res.size());
+			VisibilityVertex v(p, false, res.size());
 			v.leftP = adj[i];
 			v.rightP = adj[(i+1)%adj.size()];
 
@@ -86,95 +86,88 @@ Rectangle SegmentBoundingBox(const Segment& seg)
 	return Rectangle(minX, maxX, minY, maxY);
 }
 
-vector<vector<int> > CreateVisibilityEdges(const vector<VV>& vis, const vector<Segment>& obstacles)
+
+vector<vector<int> > VisibilityGraph::CreateVisibilityEdges(const vector<VisibilityVertex>& vis, const vector<Segment>& obstacles)
 {
 	if (obstacles.empty())
 	{
 		vector<vector<int> > edges = VVI(vis.size(), VI());
 		for (int i = 0; i < (int)vis.size(); i++)
-		{
-			for (int j = 0; j < (int)vis.size(); j++)
-				if (i != j)
-				{
-					edges[i].push_back(j);
-				}
-		}
+			for (int j = i + 1; j < (int)vis.size(); j++)
+			{
+				edges[i].push_back(j);
+				edges[j].push_back(i);
+			}
 
 		return edges;
 	}
 
-	vector<RNode*> nodes;
+	vector<SegNode*> nodes;
 	for (int i = 0; i < (int)obstacles.size(); i++)
 	{
-		RNode* node = new RNode(SegmentBoundingBox(obstacles[i]), obstacles[i]);
+		SegNode* node = new SegNode(SegmentBoundingBox(obstacles[i]), obstacles[i]);
 		nodes.push_back(node);
 	}
 
-	RTree* obstacleTree = new RTree(nodes);
+	auto_ptr<SegTree> obstacleTree = auto_ptr<SegTree>(new SegTree(nodes));
 	assert(obstacleTree->getRoot() != NULL);
 
 	vector<vector<int> > edges = VVI(vis.size(), VI());
 
-	//full visibility
-	for (int i = 0; i < (int)vis.size(); i++)
+	if (FULL_VISIBILITY)
 	{
-		for (int j = 0; j < (int)vis.size(); j++)
-			if (i != j)
-			{
-				if (IsVisible(vis[i], vis[j], obstacles, obstacleTree)) 
+		//full visibility
+		for (int i = 0; i < (int)vis.size(); i++)
+			for (int j = i + 1; j < (int)vis.size(); j++)
+				if (IsVisible(vis[i], vis[j], *obstacleTree)) 
+				{
 					edges[i].push_back(j);
-			}
+					edges[j].push_back(i);
+				}
 	}
-
-	delete obstacleTree;
-	for (int i = 0; i < (int)obstacles.size(); i++)
-		delete nodes[i];
-
-	/*
-	//sparse visibility
-	vector<int> adj;
-	Rectangle bb;
-	for (int i = 0; i < (int)vis.size(); i++)
+	else
 	{
-		adj.push_back(i);
-		bb.Add(vis[i].p);
-	}
-
-	ClosestPointQP cp(bb);
-	map<Point, vector<int> > point2VV;
-	for (int i = 0; i < (int)vis.size(); i++)
-	{
-		if (point2VV.find(vis[i].p) == point2VV.end())
-			cp.addPoint(vis[i].p);
-
-		point2VV[vis[i].p].push_back(i);
-	}
-
-	//OutputTimeInfo("#nodes: %d", vis.size());
-	int maxAdj = 30;
-	for (int i = 0; i < (int)vis.size(); i++)
-	{
-		vector<Point> adjP = cp.getKClosest(vis[i].p, maxAdj, 64);
-		//OutputTimeInfo("#extracted nodes: %d", adjP.size());
-
-		for (int k = 0; k < (int)adjP.size(); k++)
+		//sparse visibility
+		vector<int> adj;
+		Rectangle bb;
+		for (int i = 0; i < (int)vis.size(); i++)
 		{
-			vector<int>& adj = point2VV[adjP[k]];
-			for (int j = 0; j < (int)adj.size(); j++)
+			adj.push_back(i);
+			bb.Add(vis[i].p);
+		}
+
+		ClosestPointQP cp(bb);
+		map<Point, vector<int> > point2VV;
+		for (int i = 0; i < (int)vis.size(); i++)
+		{
+			if (point2VV.find(vis[i].p) == point2VV.end())
+				cp.addPoint(vis[i].p);
+
+			point2VV[vis[i].p].push_back(i);
+		}
+
+		int maxAdj = 30;
+		for (int i = 0; i < (int)vis.size(); i++)
+		{
+			vector<Point> adjP = cp.getKClosest(vis[i].p, maxAdj, 64);
+
+			for (int k = 0; k < (int)adjP.size(); k++)
 			{
-				if (i == adj[j]) continue;
-				if (IsVisible(vis[i], vis[adj[j]], obstacles, obstacleTreeRoot)) 
-					edges[i].push_back(adj[j]);
+				vector<int>& adj = point2VV[adjP[k]];
+				for (int j = 0; j < (int)adj.size(); j++)
+				{
+					if (i == adj[j]) continue;
+					if (IsVisible(vis[i], vis[adj[j]], *obstacleTree)) 
+						edges[i].push_back(adj[j]);
+				}
 			}
 		}
 	}
-	*/
 	
-	//OutputTimeInfo("edges computed");
 	return edges;
 }
 
-bool IntersectRectangleWithRNode(RNode* node, const Rectangle& rect, const VV& s, const VV& t)
+bool IntersectRectangleWithRNode(SegNode* node, const Rectangle& rect, const VisibilityVertex& s, const VisibilityVertex& t)
 {
 	if (!node->getRectangle().intersects(rect)) return false;
 
@@ -190,12 +183,12 @@ bool IntersectRectangleWithRNode(RNode* node, const Rectangle& rect, const VV& s
 	return false;
 }
 
-bool IsVisible(const VV& s, const VV& t, const vector<Segment>& obstacles, RTree* obstacleTree)
+bool IsVisible(const VisibilityVertex& s, const VisibilityVertex& t, const SegTree& obstacleTree)
 {
 	if (s.p == t.p) return false;
 
 	//check crossings with obstacles
-	if (IntersectRectangleWithRNode(obstacleTree->getRoot(), SegmentBoundingBox(Segment(s.p, t.p)), s, t)) return false;
+	if (IntersectRectangleWithRNode(obstacleTree.getRoot(), SegmentBoundingBox(Segment(s.p, t.p)), s, t)) return false;
 
 	if (!s.real && !t.real)
 	{
@@ -209,7 +202,7 @@ bool IsVisible(const VV& s, const VV& t, const vector<Segment>& obstacles, RTree
 	return true;
 }
 
-bool IsInCone(const VV& cone, const Point& p)
+bool IsInCone(const VisibilityVertex& cone, const Point& p)
 {
 	if (cone.real) return true;
 	if (cone.leftP == cone.rightP) return true;
@@ -219,7 +212,7 @@ bool IsInCone(const VV& cone, const Point& p)
 	return true;
 }
 
-bool Intersect(const VV& s, const VV& t, const Segment& seg)
+bool Intersect(const VisibilityVertex& s, const VisibilityVertex& t, const Segment& seg)
 {
 	if (s.p == seg.first || s.p == seg.second) return false;
 	if (t.p == seg.first || t.p == seg.second) return false;

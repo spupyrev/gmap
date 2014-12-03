@@ -1,11 +1,25 @@
 #pragma once
 
-#include "common/common.h"
+#include <iostream>
+#include <string>
+#include <vector>
+#include <set>
+#include <map>
+#include <algorithm>
+#include <cassert>
+
+using namespace std;
 
 class CMDOptions
 {
+private:
+	string usageMessage;
 	map<string, string> options;
+
 	map<string, string> allowedOptions;
+	vector<string> allowedOptionsOrder;
+	map<string, string> defaultValues;
+	map<string, vector<string> > allowedValues;
 
 	CMDOptions(const CMDOptions&);
 	CMDOptions& operator = (const CMDOptions&);
@@ -21,35 +35,60 @@ public:
 			if (s == "/?"  || s == "-?" || s == "--help" || s == "-help")
 			{
 				Usage(argv[0]);
-				exit(0);
+				throw 0;
 			}
 
-			vector<string> tmp = SplitNotNull(s, "=");
-			if (tmp.size() == 1)
-			{
-				options[tmp[0]] = "";
-			}
-			else if (tmp.size() == 2)
-			{
-				options[tmp[0]] = tmp[1];
-			}
-			else
-			{
-				UnrecognizedOption(s);
-			}
+			SetOption(s);
 		}
+	}
+
+	void SetUsageMessage(const string& msg)
+	{
+		usageMessage = msg;
+	}
+
+	void SetOption(const string& s)
+	{
+		size_t equalIndex = s.find('=');
+		string name = s.substr(0, equalIndex);
+		if (!allowedOptions.count(name))
+		{
+			if (equalIndex == string::npos && allowedOptions.count(""))
+			{
+				options[""] = name;
+				return;
+			}
+
+			UnrecognizedOption(name);
+		}
+
+		string value = (equalIndex == string::npos ? "" : s.substr(equalIndex + 1));
+
+		if (!options.count(name) || (defaultValues.count(name) && options[name] == defaultValues[name]))
+			options[name] = value;
+
+		if (!allowedValues[name].empty() && !count(allowedValues[name].begin(), allowedValues[name].end(), value))
+			InvalidOption(name);
 	}
 
 	void AddAllowedOption(const string& optionName, const string& defaultValue, const string& description)
 	{
 		AddAllowedOption(optionName, description);
 		options[optionName] = defaultValue;
+		defaultValues[optionName] = defaultValue;
 	}
 
 	void AddAllowedOption(const string& optionName, const string& description)
 	{
 		assert(!allowedOptions.count(optionName));
 		allowedOptions[optionName] = description;
+		allowedOptionsOrder.push_back(optionName);
+	}
+
+	void AddAllowedValue(const string& optionName, const string& value)
+	{
+		assert(allowedOptions.count(optionName));
+		allowedValues[optionName].push_back(value);
 	}
 
 	string getOption(const string& optionName) const
@@ -61,32 +100,65 @@ public:
 		return (*options.find(optionName)).second;
 	}
 
+	bool hasOption(const string& optionName) const
+	{
+		if (!allowedOptions.count(optionName))
+			UnrecognizedOption(optionName);
+
+		return options.count(optionName) > 0;
+	}
+
 	void UnspecifiedOption(const string& optionName) const
 	{
 		cout << "required option \"" << optionName << "\" is not specified\n";
-		exit(1);
+		throw 1;
 	}
 
 	void UnrecognizedOption(const string& optionName) const
 	{
 		cout << "unrecognized option \"" << optionName << "\"\n";
-		exit(1);
+		throw 1;
 	}
 
 	void InvalidOption(const string& optionName) const
 	{
 		cout << "value \"" << getOption(optionName) << "\" is invalid for option \"" << optionName << "\"\n";
-		exit(1);
+		throw 1;
 	}
 
 	void Usage(const string& program) const
 	{
-		cout << "Usage: " << program << " [options]\n";
-		cout << "Allowed options:\n";
+		if (usageMessage != "")
+			cout << usageMessage << endl;
+		else
+			cout << "Usage: " << program << " [options]" << endl;
 
-		for (auto it = begin(allowedOptions); it != end(allowedOptions); it++)
+		cout << "Allowed options:";
+		for (auto opt : allowedOptionsOrder)
 		{
-			cout << (*it).second << "\n";
+			string name = allowedOptions.find(opt)->first;
+			if (name.length() == 0) continue;
+
+			cout << endl;
+			cout << "  " << name;
+			if (allowedValues.count(name))
+			{
+				auto av = allowedValues.find(name)->second;
+				if (!av.empty())
+				{
+					cout << "=";
+					bool first = true;
+					for (string s: av)
+						if (first) 
+							{ cout << "[" << s; first = false; }
+						else 
+							cout << "|" << s;
+					cout << "]";
+				}
+			}
+			cout << endl;
+
+			cout << "  " << allowedOptions.find(opt)->second << endl;
 		}
 	}
 };

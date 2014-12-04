@@ -187,8 +187,10 @@ def call_graphviz_int(task):
     elif vis_type == 'map-sets':
     	dot_out = run_layout(task, layout_algorithm, map_string)
     	dot_out = run_clustering(task, cluster_algorithm, dot_out)
-    	set_status(task, 'making map contiguous')
-    	dot_out = call_process(ceba_command(), dot_out)
+    	# running ceba
+    	if not cluster_algorithm.startswith('cont-'):
+    		set_status(task, 'making map contiguous')
+    		dot_out = call_process(ceba_command(), dot_out)
 
     	set_status(task, 'creating map sets')
     	#log.debug('MapSets-Input: %s' %(dot_out))

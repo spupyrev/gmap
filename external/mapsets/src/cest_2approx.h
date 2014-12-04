@@ -18,6 +18,8 @@ public:
 		double marginCoef = 1.25 + clusterOrder.size() * marginDelta;
 		for (int k = 0; k < (int)clusterOrder.size(); k++)
 		{
+			cerr << k << endl;
+
 			string clusterId = clusterOrder[k];
 
 			//get obstacles
@@ -26,8 +28,8 @@ public:
 			allObstacles.insert(allObstacles.end(), boundaryObstacles.begin(), boundaryObstacles.end());
 
 			vector<Point> positions = g.GetClusterPositions(clusterId);
-			SegmentSet* tree = BuildSpanningTree(positions, allObstacles);
-			CheckTreeConnected(tree, positions, allObstacles);
+			SegmentSet* tree = BuildSpanningTree(positions, allObstacles, false);
+			//CheckTreeConnected(tree, positions, allObstacles);
 
 			trees[clusterId] = tree;
 			for (int i = 0; i < tree->count(); i++)
@@ -50,33 +52,12 @@ public:
 			//get obstacles
 			vector<Segment> obstacles = GetBoundaryObstacles(g, clusterId, 1.1);
 			vector<Point> positions = g.GetClusterPositions(clusterId);
-			SegmentSet* tree = BuildSpanningTree(positions, obstacles);
+			SegmentSet* tree = BuildSpanningTree(positions, obstacles, false);
 
 			trees[clusterId] = tree;
 		}
 
 		return TreeLength(trees);
-	}
-
-	double Get2ApproxLength(DotGraph& g)
-	{
-		VS clusterOrder = GetClusterOrder(g);
-
-		double res = 0;
-		int k = (int)clusterOrder.size();
-		for (int i = 0; i < k; i++)
-		{
-			string clusterId = clusterOrder[i];
-
-			//get obstacles
-			vector<Segment> obstacles = GetBoundaryObstacles(g, clusterId, 1.1);
-			vector<Point> positions = g.GetClusterPositions(clusterId);
-			SegmentSet* tree = BuildSpanningTree(positions, obstacles);
-
-			res += tree->Length() * (2*k - 2*i + 1);
-		}
-
-		return res;
 	}
 
 private:
@@ -103,10 +84,9 @@ private:
 		return result;
 	}
 
-	SegmentSet* BuildSpanningTree(const vector<Point>& points, const vector<Segment>& obstacles)
+	SegmentSet* BuildSpanningTree(const vector<Point>& points, const vector<Segment>& obstacles, bool fullVisibility)
 	{
-		//vis graph computation
-		VisibilityGraph visGraph(points, obstacles);
+		VisibilityGraph visGraph(points, obstacles, fullVisibility);
 		//OutputTimeInfo("vis DotGraph constructed");
 
 		VI parent = MinimumSpanningTree(visGraph, 0).second;
@@ -116,7 +96,10 @@ private:
 		SegmentSet* result = new SegmentSet();
 		for (int i = 1; i < (int)points.size(); i++)
 		{
-			vector<Segment> path = ExtractPathToReal(visGraph, parent, 0, i);
+			vector<Segment> path;
+			bool success = ExtractPathToReal(visGraph, parent, 0, i, path);
+			//assert(success);
+
 			for (int j = 0; j < (int)path.size(); j++)
 			{
 				if (!result->contains(path[j]))
@@ -174,13 +157,14 @@ private:
 		return make_pair(dist, parent);
 	}
 
-	vector<Segment> ExtractPathToReal(const VisibilityGraph& visGraph, const VI& parent, int s, int t)
+	bool ExtractPathToReal(const VisibilityGraph& visGraph, const VI& parent, int s, int t, vector<Segment>& res)
 	{
 		assert(visGraph.nodes[s].real && visGraph.nodes[t].real);
 
 		//extract optimal path
+		if (parent[t] == -1) return false;
+
 		assert(parent[t] != -1);
-		vector<Segment> res;
 		while (t != s)
 		{
 			res.push_back(Segment(visGraph.nodes[t].p, visGraph.nodes[parent[t]].p));
@@ -188,7 +172,7 @@ private:
 			if (visGraph.nodes[t].real) break;
 		}
 
-		return res;
+		return true;
 	}
 
 	double Distance(const Point& p1, const Point& p2)

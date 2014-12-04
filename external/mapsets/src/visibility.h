@@ -25,9 +25,9 @@ private:
 	VisibilityGraph(const VisibilityGraph&);
 	VisibilityGraph& operator = (const VisibilityGraph&);
 
-	void Initialze(const vector<Point>& points, const vector<Segment>& obstacles);
+	void Initialze(const vector<Point>& points, const vector<Segment>& obstacles, bool fullVisibility);
 	vector<VisibilityVertex> CreateVisibilityVertices(const vector<Point>& p, const vector<Segment>& obstacles);
-	vector<vector<int> > CreateVisibilityEdges(const vector<VisibilityVertex>& vis, const vector<Segment>& obstacles);
+	vector<vector<int> > CreateVisibilityEdges(const vector<VisibilityVertex>& vis, const vector<Segment>& obstacles, bool fullVisibility);
 
 public:
 	vector<VisibilityVertex> nodes;
@@ -36,7 +36,12 @@ public:
 	VisibilityGraph(vector<VisibilityVertex>& nodes, VVI edges): nodes(nodes), edges(edges) {}
 	VisibilityGraph(const vector<Point>& points, const vector<Segment>& obstacles) 
 	{
-		Initialze(points, obstacles);
+		Initialze(points, obstacles, false);
+	}
+
+	VisibilityGraph(const vector<Point>& points, const vector<Segment>& obstacles, bool fullVisibility) 
+	{
+		Initialze(points, obstacles, fullVisibility);
 	}
 
 };
@@ -57,7 +62,7 @@ public:
 
 	void CheckTreeConnected(SegmentSet* tree, vector<Point>& points, vector<Segment>& obstacles) const
 	{
-		VisibilityGraph visGraph(points, obstacles);
+		VisibilityGraph visGraph(points, obstacles, false);
 
 		VVI edges;
 		for (int i = 0; i < (int)visGraph.nodes.size(); i++)

@@ -5,8 +5,6 @@
 #include "graph_algorithms.h"
 #include "closest_point.h"
 
-#define FULL_VISIBILITY 0
-
 typedef RNode<Segment> SegNode;
 typedef RTree<Segment> SegTree;
 
@@ -14,10 +12,10 @@ bool IsVisible(const VisibilityVertex& s, const VisibilityVertex& t, const SegTr
 bool IsInCone(const VisibilityVertex& cone, const Point& p);
 bool Intersect(const VisibilityVertex& s, const VisibilityVertex& t, const Segment& seg);
 
-void VisibilityGraph::Initialze(const vector<Point>& p, const vector<Segment>& obstacles)
+void VisibilityGraph::Initialze(const vector<Point>& p, const vector<Segment>& obstacles, bool fullVisibility)
 {
 	nodes = CreateVisibilityVertices(p, obstacles);
-	edges = CreateVisibilityEdges(nodes, obstacles);
+	edges = CreateVisibilityEdges(nodes, obstacles, fullVisibility);
 }
 
 struct ClockwiseComparator
@@ -87,7 +85,7 @@ Rectangle SegmentBoundingBox(const Segment& seg)
 }
 
 
-vector<vector<int> > VisibilityGraph::CreateVisibilityEdges(const vector<VisibilityVertex>& vis, const vector<Segment>& obstacles)
+vector<vector<int> > VisibilityGraph::CreateVisibilityEdges(const vector<VisibilityVertex>& vis, const vector<Segment>& obstacles, bool fullVisibility)
 {
 	if (obstacles.empty())
 	{
@@ -114,7 +112,7 @@ vector<vector<int> > VisibilityGraph::CreateVisibilityEdges(const vector<Visibil
 
 	vector<vector<int> > edges = VVI(vis.size(), VI());
 
-	if (FULL_VISIBILITY)
+	if (fullVisibility)
 	{
 		//full visibility
 		for (int i = 0; i < (int)vis.size(); i++)

@@ -14,59 +14,63 @@ namespace modularity {
 class Community
 {
 private:
-	BinaryGraph g;
-	int size;
+	BinaryGraph* g;
+	bool contiguity;
 	vector<int> n2c;
 	vector<double> in;
 	vector<double> tot;
 	vector<int> totCount;
-	int nb_pass;
-	double minModularity;
+
+	Community(const Community&);
+	Community& operator = (const Community&);
 
 public:
-	Community(BinaryGraph graph, int nbp, double minModularity) : g(graph), nb_pass(nbp), minModularity(minModularity)
+	Community(BinaryGraph* g, bool contiguity) : g(g), contiguity(contiguity)
 	{
-		size = graph.n;
+		n2c = vector<int>(g->n);
+		in = vector<double>(g->n);
+		tot = vector<double>(g->n);
+		totCount = vector<int>(g->n);
 
-		n2c = vector<int>(size);
-		in = vector<double>(size);
-		tot = vector<double>(size);
-		totCount = vector<int>(size);
-
-		for (int i = 0; i < size; i++)
+		for (int i = 0; i < g->n; i++)
 		{
 			n2c[i] = i;
-			in[i] = graph.countSelfloops(i);
-			tot[i] = graph.getWeightedDegree(i);
+			in[i] = g->selfLoops[i];
+			tot[i] = g->weightedDegree[i];
 			totCount[i] = 1;
 		}
 	}
 
-	inline void insert(int node, int comm, double dnodecomm)
+	~Community()
 	{
-		tot[comm] += g.getWeightedDegree(node);
+		delete g;
+	}
+
+	void insert(int node, int comm, double dnodecomm)
+	{
+		tot[comm] += g->weightedDegree[node];
 		totCount[comm] += 1;
-		in[comm] += 2 * dnodecomm + g.countSelfloops(node);
+		in[comm] += 2 * dnodecomm + g->selfLoops[node];
 		n2c[node] = comm;
 	}
 
-	inline void remove(int node, int comm, double dnodecomm)
+	void remove(int node, int comm, double dnodecomm)
 	{
-		assert (node >= 0 && node < size);
+		assert (node >= 0 && node < g->n);
 
-		tot[comm] -= g.getWeightedDegree(node);
+		tot[comm] -= g->weightedDegree[node];
 		totCount[comm] -= 1;
-		in[comm] -= 2 * dnodecomm + g.countSelfloops(node);
+		in[comm] -= 2 * dnodecomm + g->selfLoops[node];
 		n2c[node] = -1;
 	}
 
-	inline double gainModularity(int node, int comm, double dnodecomm)
+	double gain_modularity(int node, int comm, double dnodecomm)
 	{
-		assert (node >= 0 && node < size);
+		assert (node >= 0 && node < g->n);
 
 		double totc = tot[comm];
-		double degc = g.getWeightedDegree(node);
-		double m2 = g.totalWeight;
+		double degc = g->weightedDegree[node];
+		double m2 = g->totalWeight;
 		double dnc = dnodecomm;
 
 		return (dnc - totc * degc / m2);
@@ -77,11 +81,11 @@ public:
 	// computation of all neighboring communities of current node
 	map<int, double> neigh_comm(int node) const;
 
-	double one_level(const Cluster* rootCluster);
+	double one_level();
 
-	BinaryGraph partition2graph_binary() const;
+	BinaryGraph* prepareBinaryGraph() const;
 
-	Cluster* prepareCluster(const Cluster* rootCluster, const BinaryGraph& binaryGraph) const;
+	Cluster* prepareCluster(const Cluster* rootCluster) const;
 };
 
 } // namespace modularity

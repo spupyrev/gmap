@@ -2,6 +2,8 @@
 
 #include "common/geometry/segment.h"
 
+#include <algorithm>
+
 void findAverageDistances(DotGraph& g, double& avgGeom, double& avgIdeal)
 {
 	avgGeom = 0;
@@ -288,7 +290,7 @@ double computeUniform(const DotGraph& g)
 			//observed frequency (words inside cell)
 			double p = 0;
 			for (int k = 0; k < (int)g.nodes.size(); k++)
-				if (cell.contains(g.nodes[k]->getPos())) p++;
+				if (cell.Contains(g.nodes[k]->getPos())) p++;
 
 			p /= (double)g.nodes.size();
 			if (Abs(p) < EPS) continue;
@@ -322,7 +324,7 @@ double computeCrossings(DotGraph& g, double& minCrossAngle, double& avgCrossAngl
 {
 	minCrossAngle = avgCrossAngle = UNDEF;
 	if (g.nodes.size() <= 0) return UNDEF;
-	if (g.edges.size() > 2000) return UNDEF;
+	if (g.edges.size() > 1000) return UNDEF;
 
 	VD crossAngles;
 	int cr = 0;
@@ -481,6 +483,8 @@ double computeConductance(DotGraph& g)
 	}
 }
 
+double computeContiguity(DotGraph& g);
+
 void Metrics::Compute(DotGraph& g)
 {
 	ComputeLayout(g);
@@ -507,4 +511,5 @@ void Metrics::ComputeCluster(DotGraph& g)
 	modularity = computeModularity(g);
 	coverage = computeCoverage(g);
 	conductance = computeConductance(g);
+	contiguity = computeContiguity(g);
 }

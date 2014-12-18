@@ -818,7 +818,7 @@ void printTree(InfomapResult& ir, string s, TreeNode &map, vector<string>& nodeN
 			if (1.0 * it->second.members.size() > 1.0 * stats.largeModuleLimit)
 				stats.NlargeModules++;
 
-			string cpy_s(s + toString(i) + ":");
+			string cpy_s(s + to_string(i) + ":");
 			printTree(ir, cpy_s, it->second, nodeNames, degree, totalDegree, depth + 1, stats);
 			i++;
 		}
@@ -839,9 +839,9 @@ void printTree(InfomapResult& ir, string s, TreeNode &map, vector<string>& nodeN
 		for (multimap<double, int, greater<double> >::iterator mem = sortedMem.begin(); mem != sortedMem.end(); mem++)
 		{
 			string nodeName = nodeNames[mem->second];
-			string cpy_s(s + toString(i) + " " + toString(1.0 * mem->first / totalDegree) + " \"" + nodeName + "\"");
+			string cpy_s(s + to_string(i) + " " + to_string(1.0 * mem->first / totalDegree) + " \"" + nodeName + "\"");
 			DotNode* v = ir.idToNode[nodeName];
-			ir.code[v] = s + toString(i);
+			ir.code[v] = s + to_string(i);
 			i++;
 		}
 	}

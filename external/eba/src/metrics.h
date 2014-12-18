@@ -1,7 +1,8 @@
 #pragma once
 
-#include "common/common.h"
 #include "common/graph/dot_graph.h"
+
+#include <fstream>
 
 const double UNDEF = -12345.0;
 
@@ -23,6 +24,7 @@ public:
 	double modularity;
 	double coverage;
 	double conductance;
+	double contiguity;
 
 	Metrics()
 	{
@@ -39,6 +41,7 @@ public:
 		modularity = UNDEF;
 		coverage = UNDEF;
 		conductance = UNDEF;
+		contiguity = UNDEF;
 	}
 
 	void OutputLayout(const string& filename) const
@@ -91,6 +94,7 @@ public:
 		out << "Modularity:                 " << safeString(modularity) << "\n";
 		out << "Coverage:                   " << safeString(coverage) << "\n";
 		out << "Conductance:                " << safeString(conductance) << "\n";
+		out << "Contiguity:                 " << safeString(contiguity) << "\n";
 	}
 
 	void Output(const string& filename) const

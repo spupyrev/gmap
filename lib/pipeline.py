@@ -99,7 +99,7 @@ def run_clustering(task, cluster_algorithm, dot_out):
 	elif cluster_algorithm == 'hierarchical':
 		return call_process(cluster_command('graphhierarchical'), dot_out)
 	elif cluster_algorithm == 'cont-hierarchical':
-		return call_process(cluster_command('geometrichierarchical'), dot_out)
+		return call_process(cluster_command('modularity-cont'), dot_out)
 	elif cluster_algorithm == 'infomap':
 		return call_process(cluster_command('infomap'), dot_out)
 	elif cluster_algorithm == 'cont-infomap':

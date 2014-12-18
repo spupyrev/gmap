@@ -3,10 +3,9 @@
 #include "greedy.h"
 #include "imnode.h"
 
-#include "common/common.h"
 #include "common/graph/dot_graph.h"
 
-using namespace std;
+#include <functional>
 
 namespace infomap {
 

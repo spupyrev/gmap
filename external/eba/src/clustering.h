@@ -1,12 +1,9 @@
 #pragma once
 
-#include "common/common.h"
 #include "common/graph/dot_graph.h"
 
 typedef vector<DotNode*> VN;
 typedef vector<VN> VVN;
-
-vector<vector<DotNode*> > clusterBetweenness(const DotGraph& g, int K);
 
 class ClusterAlgorithm
 {
@@ -25,7 +22,7 @@ class ClusteringInfo
 {
 	ConnectedDotGraph* g;
 	//index of node cluster, or -1 if the node is not present in G
-	VI cluster;
+	vector<int> cluster;
 	int clusterCount;
 	double modularity;
 
@@ -33,10 +30,10 @@ class ClusteringInfo
 	double m2;
 
 	//sum of weights of all edges incident to a node in the cluster; inner edges are counted twice
-	VD sumTot;
+	vector<double> sumTot;
 
 	//sum of weights of all edges inside the cluster
-	VD sumIn;
+	vector<double> sumIn;
 
 public:
 	ClusteringInfo(ConnectedDotGraph* g, const VVN& groups);
@@ -115,6 +112,10 @@ class InfoMap: public ClusterAlgorithm
 
 class Modularity: public ClusterAlgorithm
 {
+	bool contigous;
+public:
+	Modularity(bool contigous): contigous(contigous) {}
+
 	void cluster(DotGraph& g);
 	void cluster(DotGraph& g, int K);
 	VVN cluster(ConnectedDotGraph& g, int K)

@@ -1,8 +1,7 @@
 #pragma once
 
-#include "modularity_graph.h"
-
 #include <vector>
+#include <set>
 #include <cassert>
 using namespace std;
 
@@ -10,41 +9,48 @@ namespace modularity {
 
 class BinaryGraph
 {
+private:
+	BinaryGraph(const BinaryGraph&);
+	BinaryGraph& operator = (const BinaryGraph&);
+
 public:
 	int n;
 	double totalWeight;
 
+	// edges with weights
 	vector<vector<int> > links;
 	vector<vector<double> > weights;
+	// spatial neighbors (contains adjacent nodes)
+	vector<set<int> > adj;
 
-	BinaryGraph() {}
+	// weighted degree
+	vector<double> weightedDegree;
+	// weighted self loop
+	vector<double> selfLoops;
 
-	BinaryGraph(ModularityGraph& graph)
+	BinaryGraph(int n, bool contiguity): n(n), totalWeight(0) 
 	{
-		// read number of nodes on 4 bytes
-		n = graph.getSize();
-		totalWeight = 0;
-
-		// read links: 4 bytes for each link (each link is counted twice)
 		links = vector<vector<int> >(n, vector<int>());
 		weights = vector<vector<double> >(n, vector<double>());
+		if (contiguity)
+			adj = vector<set<int> >(n, set<int>());
+
+		weightedDegree = vector<double>(n, 0);
+		selfLoops = vector<double>(n, 0);
+	}
+
+	void InitWeights()
+	{
 		for (int i = 0; i < n; i++)
 		{
-			int edgeSize = graph.getVertex(i)->getEdgesSize();
-
-			links[i] = vector<int>(edgeSize);
-			weights[i] = vector<double>(edgeSize);
-			for (int j = 0; j < edgeSize; j++)
-			{
-				links[i][j] = graph.getVertex(i)->getEdge(j);
-				weights[i][j] = graph.getVertex(i)->getWeight(j);
-				totalWeight += weights[i][j];
-			}
+			weightedDegree[i] = getWeightedDegree(i);
+			selfLoops[i] = countSelfloops(i);
 		}
 	}
 
+private:
 	// return the number of self loops of the node
-	inline double countSelfloops(int node)
+	double countSelfloops(int node)	const
 	{
 		assert (node >= 0 && node < n);
 
@@ -57,7 +63,7 @@ public:
 	}
 
 	// return the weighted degree of the node
-	inline double getWeightedDegree(int node)
+	double getWeightedDegree(int node) const
 	{
 		assert (node >= 0 && node < n);
 

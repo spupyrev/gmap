@@ -1,7 +1,5 @@
 #pragma once
 
-#include "binary_graph.h"
-
 #include <cassert>
 #include <vector>
 using namespace std;
@@ -12,24 +10,22 @@ class Cluster
 {
 private:
 	vector<Cluster*> subClusters;
-	vector<ModularityVertex*> vertexes;
-	BinaryGraph binaryGraph;
+	vector<int> vertexes;
 
-	Cluster(const Cluster& v);
-	Cluster& operator = (const Cluster& v);
+	Cluster(const Cluster&);
+	Cluster& operator = (const Cluster&);
 
 public:
-	Cluster(BinaryGraph binaryGraph): binaryGraph(binaryGraph) {}
+	Cluster() {}
 
 	~Cluster()
 	{
-		for (int i=0;i<(int)subClusters.size();i++)
+		for (int i = 0; i < (int)subClusters.size(); i++)
 			delete subClusters[i];
 	}
 
-	inline void init(const vector<Cluster*>& subClusters, const vector<ModularityVertex*>& vertexes, const BinaryGraph& binaryGraph)
+	inline void init(const vector<Cluster*>& subClusters, const vector<int>& vertexes)
 	{
-		this->binaryGraph = binaryGraph;
 		this->subClusters = subClusters;
 		this->vertexes = vertexes;
 	}
@@ -44,7 +40,7 @@ public:
 		return (!containsVertices());
 	}
 
-	inline const vector<ModularityVertex*>& getVertexes() const
+	inline const vector<int>& getVertexes() const
 	{
 		return vertexes;
 	}
@@ -54,12 +50,7 @@ public:
 		return subClusters;
 	}
 
-	inline BinaryGraph getBinaryGraph() const
-	{
-		return binaryGraph;
-	}
-
-	inline void addVertex(ModularityVertex* v)
+	inline void addVertex(int v)
 	{
 		assert(subClusters.empty());
 
@@ -73,11 +64,7 @@ public:
 		subClusters.push_back(c);
 	}
 
-	int getSize() const;
-
-	BinaryGraph constructSubBinaryGraph(const vector<int>& indexes) const;
-
-	vector<ModularityVertex*> extractAllVertices() const;
+	vector<int> extractAllVertices() const;
 };
 
 } // namespace modularity

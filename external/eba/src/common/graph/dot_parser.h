@@ -1,7 +1,9 @@
 #pragma once
 
-#include "common/common.h"
 #include "common/graph/dot_graph.h"
+
+#include <iostream>
+#include <fstream>
 
 class DotReader
 {
@@ -19,6 +21,11 @@ public:
 		{
 			ifstream fileStream;
 			fileStream.open(filename.c_str(), ios::in);
+			if (!fileStream)
+			{
+				cerr << "can't open input file '" << filename << "'" << endl;
+				throw 1;
+			}
 			lines = ReadLines(fileStream);
 			fileStream.close();
 		}
@@ -325,13 +332,24 @@ private:
 	void WriteStyles(ostream& os, const DotGraph& g)
 	{
 		for (int i = 0; i < (int)g.style.size(); i++)
-			WriteNode(os, g.style[i], false);
+			WriteStyle(os, g.style[i], false);
 	}
 
 	void WriteNodes(ostream& os, const DotGraph& g)
 	{
 		for (int i = 0; i < (int)g.nodes.size(); i++)
 			WriteNode(os, g.nodes[i], true);
+	}
+
+	void WriteStyle(ostream& os, const DotNode* n, bool useQ)
+	{
+		if (useQ)
+			os << "  \"" << n->id << "\" ";
+		else
+			os << "  " << n->id << " ";
+
+		WriteAttr(os, n->attr);
+		os << ";\n";
 	}
 
 	void WriteNode(ostream& os, const DotNode* n, bool useQ)

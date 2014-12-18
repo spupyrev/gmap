@@ -12,7 +12,7 @@ void InfoMap::cluster(DotGraph& g)
 	for (int i = 0; i < (int)connG.size(); i++)
 	{
 		vector<vector<DotNode*> > clust = runInfomap(connG[i], 10, 1.0);
-		g.assignClusters(clust, curK);
+		g.AssignClusters(clust, curK);
 		curK += clust.size();
 	}
 }

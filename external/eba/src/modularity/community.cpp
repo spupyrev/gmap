@@ -1,13 +1,15 @@
 #include "community.h"
 
+#include <set>
+
 namespace modularity {
 
 double Community::modularity() const
 {
 	double q = 0.;
-	double m2 = g.totalWeight;
+	double m2 = g->totalWeight;
 
-	for (int i = 0; i < size; i++)
+	for (int i = 0; i < g->n; i++)
 	{
 		if (tot[i] > 0)
 			q += in[i] / m2 - (tot[i] / m2) * (tot[i] / m2);
@@ -19,25 +21,38 @@ double Community::modularity() const
 // computation of all neighboring communities of current node
 map<int, double> Community::neigh_comm(int node) const
 {
-	map<int, double> res;
-
-	res[n2c[node]] = 0;
-	for (int i = 0; i < (int)g.links[node].size(); i++)
+	set<int> adj_comm;
+	if (contiguity)
 	{
-		int neigh = g.links[node][i];
-		int neigh_comm = n2c[neigh];
-		double neigh_weight = g.weights[node][i];
-
-		if (neigh != node)
+		for (auto adj_neigh : g->adj[node])
 		{
-			res[neigh_comm] += neigh_weight;
+			if (adj_neigh == node) continue;
+
+			int neigh_comm = n2c[adj_neigh];
+			adj_comm.insert(neigh_comm);
 		}
 	}
+
+	map<int, double> res;
+	int comm = n2c[node];
+	res[comm] = 0;
+	for (int i = 0; i < (int)g->links[node].size(); i++)
+	{
+		int neigh = g->links[node][i];
+		if (neigh == node) continue;
+
+		int neigh_comm = n2c[neigh];
+		if (contiguity && neigh_comm != comm && !adj_comm.count(neigh_comm)) continue;
+
+		double neigh_weight = g->weights[node][i];
+		res[neigh_comm] += neigh_weight;
+	}
+
 
 	return res;
 }
 
-double Community::one_level(const Cluster* rootCluster)
+double Community::one_level()
 {
 	bool improvement = false;
 	int nb_pass_done = 0;
@@ -56,7 +71,7 @@ double Community::one_level(const Cluster* rootCluster)
 		nb_pass_done++;
 
 		// for each node: remove the node from its community and insert it in the best community
-		for (int node_tmp = 0; node_tmp < size; node_tmp++)
+		for (int node_tmp = 0; node_tmp < g->n; node_tmp++)
 		{
 			int node = node_tmp;
 			int node_comm = n2c[node];
@@ -70,16 +85,16 @@ double Community::one_level(const Cluster* rootCluster)
 			// compute the nearest community for node
 			// default choice for future insertion is the former community
 			int best_comm = node_comm;
-			double best_nblinks = 0;//ncomm.find(node_comm)->second;
-			double best_increase = 0.;//modularity_gain(node, best_comm, best_nblinks);
+			double best_nblinks = 0;
+			double best_increase = 0;
 			for (auto iter = ncomm.begin(); iter != ncomm.end(); iter++)
 			{
-				int it = (*iter).first;
-				double increase = gainModularity(node, it, ncomm[it]);
-				if (increase > best_increase)
+				int new_comm = (*iter).first;
+				double increase = gain_modularity(node, new_comm, ncomm[new_comm]);
+				if (increase > best_increase + 1e-8)
 				{
-					best_comm = it;
-					best_nblinks = ncomm[it];
+					best_comm = new_comm;
+					best_nblinks = ncomm[new_comm];
 					best_increase = increase;
 				}
 			}
@@ -93,19 +108,19 @@ double Community::one_level(const Cluster* rootCluster)
 		new_mod = modularity();
 		//cerr << "pass number " << nb_pass_done << " of " << nb_pass << " : " << new_mod << " " << cur_mod << endl;
 	} 
-	while (improvement && new_mod - cur_mod > minModularity && nb_pass_done != nb_pass);
+	while (improvement && new_mod - cur_mod > 1e-6);
 
 	return new_mod;
 }
 
-BinaryGraph Community::partition2graph_binary() const
+BinaryGraph* Community::prepareBinaryGraph() const
 {
 	map<int, vector<int> > comm;
 	map<int, int> comm2Order;
 	vector<int> order;
-	for (int i = 0; i < size; i++)
+	for (int i = 0; i < g->n; i++)
 	{
-		if (comm.find(n2c[i])==comm.end())
+		if (!comm.count(n2c[i]))
 		{
 			comm[n2c[i]] = vector<int>();
 			order.push_back(n2c[i]);
@@ -116,55 +131,57 @@ BinaryGraph Community::partition2graph_binary() const
 	}
 
 	// unweigthed to weighted
-	BinaryGraph g2;
-	g2.n = (int)order.size();
-	g2.totalWeight = 0;
-	g2.links = vector<vector<int> >(order.size(), vector<int>());
-	g2.weights = vector<vector<double> >(order.size(), vector<double>());
-
+	BinaryGraph* g2 = new BinaryGraph((int)order.size(), contiguity);
+	// initialize edges
 	for (int ci = 0; ci < (int)order.size(); ci++)
 	{
 		int cIndex = order[ci];
 		map<int, double> m;
 
-		for (int i=0;i<(int)comm[cIndex].size();i++)
+		for (int i = 0; i < (int)comm[cIndex].size(); i++)
 		{
 			int vIndex = comm[cIndex][i];
-			for (int i = 0; i < (int)g.links[vIndex].size(); i++)
+			for (int i = 0; i < (int)g->links[vIndex].size(); i++)
 			{
-				int neigh = g.links[vIndex][i];
+				int neigh = g->links[vIndex][i];
 				int neigh_comm = comm2Order[n2c[neigh]];
-				double neigh_weight = g.weights[vIndex][i];
+				double neigh_weight = g->weights[vIndex][i];
 
 				m[neigh_comm] += neigh_weight;
 			}
+
+			if (contiguity)
+			{
+				for (auto adj_neigh : g->adj[vIndex])
+				{
+					int neigh_comm = comm2Order[n2c[adj_neigh]];
+					g2->adj[ci].insert(neigh_comm);
+				}
+			}
 		}
 
-		g2.links[ci] = vector<int>(m.size());
-		g2.weights[ci] = vector<double>(m.size());
-
-		int wh = 0;
-		for (auto iter=m.begin(); iter!=m.end(); iter++)
+		for (auto it : m)
 		{
-			int it = (*iter).first;
-			g2.totalWeight += m[it];
-			g2.links[ci][wh] = it;
-			g2.weights[ci][wh] = m[it];
-			wh++;
+			int neigh_comm = it.first;
+			g2->totalWeight += m[neigh_comm];
+			g2->links[ci].push_back(neigh_comm);
+			g2->weights[ci].push_back(m[neigh_comm]);
 		}
 	}
+
+	g2->InitWeights();
 
 	return g2;
 }
 
-Cluster* Community::prepareCluster(const Cluster* rootCluster, const BinaryGraph& binaryGraph) const
+Cluster* Community::prepareCluster(const Cluster* rootCluster) const
 {
-	Cluster* cluster = new Cluster(binaryGraph);
+	Cluster* cluster = new Cluster();
 	map<int, vector<int> > comm;
 	vector<int> order;
-	for (int i = 0; i < size; i++)
+	for (int i = 0; i < g->n; i++)
 	{
-		if (comm.find(n2c[i])==comm.end())
+		if (!comm.count(n2c[i]))
 		{
 			comm[n2c[i]] = vector<int>();
 			order.push_back(n2c[i]);
@@ -176,9 +193,8 @@ Cluster* Community::prepareCluster(const Cluster* rootCluster, const BinaryGraph
 	for (int ci = 0; ci < (int)order.size(); ci++)
 	{
 		int cIndex = order[ci];
-		BinaryGraph subBinaryGraph = rootCluster->constructSubBinaryGraph(comm[cIndex]);
-		Cluster* subCluster = new Cluster(subBinaryGraph);
-		for (int i=0;i<(int)comm[cIndex].size();i++)
+		Cluster* subCluster = new Cluster();
+		for (int i = 0; i < (int)comm[cIndex].size(); i++)
 		{
 			int vIndex = comm[cIndex][i];
 			if (rootCluster->containsVertices())

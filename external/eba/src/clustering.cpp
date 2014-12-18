@@ -1,5 +1,10 @@
 #include "clustering.h"
 
+#include <map>
+#include <algorithm>
+#include <iostream>
+#include <cassert>
+
 ClusteringInfo::ClusteringInfo(ConnectedDotGraph* g, const VVN& groups)
 {
 	this->g = g;
@@ -195,7 +200,7 @@ void ClusterAlgorithm::cluster(DotGraph& g, int K)
 		if (i == (int)connG.size() - 1) k = K - curK;
 
 		vector<vector<DotNode*> > clust = cluster(connG[i], k);
-		g.assignClusters(clust, curK);
+		g.AssignClusters(clust, curK);
 		curK += clust.size();
 	}
 	assert(curK <= K);

@@ -46,7 +46,7 @@
 
 				<li>
 					<a href="ftp://ftp.cs.arizona.edu/reports/2014/TR14-02.pdf">Visualizing Graphs as Maps with Contiguous Regions</a>,
-					a <a href="http://gmap.cs.arizona.edu/static/media/cont-maps-video.mp4">video</a> accompanying the paper with more details
+					a <a href="{% get_static_prefix %}media/cont-maps-video.mp4">video</a> accompanying the paper with more details
 					
 				</li>
 
@@ -54,7 +54,7 @@
 
 			<br>
 			Source code for the entire system is available on <a href="https://github.com/spupyrev/gmap">Github</a>.
-			A dataset of real-world graphs and networks used for our experiments can be downloaded <a href="#">here</a>.
+			A dataset of real-world graphs and networks used for our experiments can be downloaded <a href="{% url 'maps:datasets' %}">here</a>.
 		</p>
 
 	</div>

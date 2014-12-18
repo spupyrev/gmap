@@ -4,6 +4,6 @@
 
 namespace modularity {
 
-vector<vector<DotNode*> > runModularity(ConnectedDotGraph& g);
+vector<vector<DotNode*> > runModularity(DotGraph& g, bool contiguity);
 
 } // namespace modularity

@@ -375,7 +375,7 @@ public:
 	DotEdge* findEdge(DotNode* v, DotNode* u)
 	{
 		pair<DotNode*, DotNode*> pr = make_pair(v, u);
-		if (adjEdge.find(pr) == adjEdge.end()) return NULL;
+		if (adjEdge.find(pr) == adjEdge.end()) return nullptr;
 		return adjEdge[pr];
 	}
 

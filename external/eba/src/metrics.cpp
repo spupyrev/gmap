@@ -373,8 +373,8 @@ double computeModularity(DotGraph& g)
 				DotNode* t = g.nodes[j];
 				DotEdge* edge = g.findEdge(s, t);
 
-				string cluster_s = s->getAttr("cluster");
-				string cluster_t = t->getAttr("cluster");
+				string cluster_s = s->getCluster();
+				string cluster_t = t->getCluster();
 				if (cluster_s != cluster_t) continue;
 
 				double w = (edge != NULL ? edge->getWeight() : 0);
@@ -387,6 +387,56 @@ double computeModularity(DotGraph& g)
 		res /= (2.0 * m);
 
 		return res;
+	}
+	catch (int e)
+	{
+		if (e == 1) return UNDEF;
+		throw e;
+	}
+}
+
+double computeModularityFast(DotGraph& g)
+{
+	try
+	{
+		vector<vector<DotNode*> > groups;
+		for (auto gr : g.GetClusters())
+			groups.push_back(gr.second);
+
+		vector<int> cluster(g.nodes.size(), -1);
+		int clusterCount = (int)groups.size();
+		for (int i = 0; i < (int)groups.size(); i++)
+			for (int j = 0; j < (int)groups[i].size(); j++)
+				cluster[groups[i][j]->index] = i;
+
+		double m2 = 0;
+		for (int i = 0; i < (int)g.nodes.size(); i++)
+			m2 += g.weightedDegree(g.nodes[i]);
+
+		vector<double> sumTot(clusterCount, 0);
+		for (int i = 0; i < (int)groups.size(); i++)
+			for (int j = 0; j < (int)groups[i].size(); j++)
+				sumTot[i] += g.weightedDegree(groups[i][j]);
+
+		vector<double> sumIn(clusterCount, 0);
+		for (int i = 0; i < (int)g.edges.size(); i++)
+		{
+			DotEdge* e = g.edges[i];
+			DotNode* u = g.findNodeById(e->s);
+			DotNode* v = g.findNodeById(e->t);
+
+			if (u->getCluster() == v->getCluster())
+				sumIn[cluster[u->index]] += e->getWeight();
+		}
+
+		double q = 0.;
+		for (int i = 0; i < clusterCount; i++)
+		{
+			if (sumTot[i] > 0)
+				q += 2.0 * sumIn[i] / m2 - (sumTot[i] / m2) * (sumTot[i] / m2);
+		}
+
+		return q;
 	}
 	catch (int e)
 	{
@@ -508,7 +558,8 @@ void Metrics::ComputeLayout(DotGraph& g)
 
 void Metrics::ComputeCluster(DotGraph& g)
 {
-	modularity = computeModularity(g);
+	modularity = computeModularityFast(g);
+	//modularity = computeModularity(g);
 	coverage = computeCoverage(g);
 	conductance = computeConductance(g);
 	contiguity = computeContiguity(g);

@@ -99,8 +99,19 @@ public:
 
 	void Output(const string& filename) const
 	{
-		OutputLayout(filename);
-		OutputCluster(filename);
+		if (filename != "")
+		{
+			ofstream fileStream;
+			fileStream.open(filename.c_str(), ios::out);
+			OutputLayout(fileStream);
+			OutputCluster(fileStream);
+			fileStream.close();
+		}
+		else
+		{
+			OutputLayout(cout);
+			OutputCluster(cout);
+		}
 	}
 
 	string safeString(double value) const

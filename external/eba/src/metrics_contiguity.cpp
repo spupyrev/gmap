@@ -55,4 +55,3 @@ double computeContiguity(DotGraph& g)
 
 	return 1.0 - Average(error);
 }
-

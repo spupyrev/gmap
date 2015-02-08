@@ -562,5 +562,5 @@ void Metrics::ComputeCluster(DotGraph& g)
 	//modularity = computeModularity(g);
 	coverage = computeCoverage(g);
 	conductance = computeConductance(g);
-	contiguity = computeContiguity(g);
+	//contiguity = computeContiguity(g);
 }

@@ -44,7 +44,7 @@ void MetricsAction(const CMDOptions& options)
 	DotGraph g = parser.ReadGraph(options.getOption(""));
 
 	Metrics m;
-	m.Compute(g);
+	m.ComputeCluster(g);
 	m.Output(options.getOption("-o"));
 }
 

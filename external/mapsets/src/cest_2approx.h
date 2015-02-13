@@ -3,11 +3,15 @@
 #include "graph_algorithms.h"
 #include "visibility.h"
 
+//#include "debug_utils.h"
+
 class CEST2Approx: public CESTAlgorithm
 {
 public:
 	map<string, SegmentSet*> BuildTrees(DotGraph& g)
 	{
+		//DrawSpanningTrees(g);
+
 		VS clusterOrder = GetClusterOrder(g);
 
 		//find optimal spanning tree for each cluster
@@ -18,8 +22,6 @@ public:
 		double marginCoef = 1.25 + clusterOrder.size() * marginDelta;
 		for (int k = 0; k < (int)clusterOrder.size(); k++)
 		{
-			cerr << k << endl;
-
 			string clusterId = clusterOrder[k];
 
 			//get obstacles
@@ -39,6 +41,28 @@ public:
 		}
 		return trees;
 	}
+
+	/*void DrawSpanningTrees(DotGraph& g)
+	{
+		auto clusters = g.GetClusters();
+
+		map<string, SegmentSet*> trees;
+		for (auto it : clusters)
+		{
+			string clusterId = it.first;
+			cerr << "computing MST for " << clusterId << endl;
+
+
+			//get obstacles
+			vector<Segment> obstacles = GetBoundaryObstacles(g, clusterId, 1.1);
+			vector<Point> positions = g.GetClusterPositions(clusterId);
+			SegmentSet* tree = BuildSpanningTree(positions, obstacles);
+
+			trees[clusterId] = tree;
+		}
+
+		OutputDebugTrees(g, trees, "test.svg");
+	} */
 
 	double GetMSTLength(DotGraph& g)
 	{

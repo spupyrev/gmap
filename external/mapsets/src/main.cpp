@@ -20,17 +20,11 @@ void PrepareCMDOptions(int argc, char** argv, CMDOptions& args)
 DotGraph ReadGraph(const string& filename)
 {
 	DotReader parser;
-	DotGraph g = parser.ReadGraph(filename);
-
-	//g.OutputStatistics();
-
-	return g;
+	return parser.ReadGraph(filename);
 }
 
 void WriteGraph(const string& filename, DotGraph& g)
 {
-	//g.OutputStatistics();
-
 	DotWriter writer;
 	writer.WriteGraph(filename, g);
 }
@@ -39,7 +33,7 @@ int main(int argc, char **argv)
 {
 	InitRand(123);
 
-	auto options = unique_ptr<CMDOptions>(new CMDOptions());
+	auto options = CMDOptions::Create();
 
 	int returnCode = 0;
 	try

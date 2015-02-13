@@ -11,7 +11,8 @@ class Segment
 	}
 
 public:
-	Point first, second;
+	Point first;
+	Point second;
 
 	Segment(): first(), second() {}
 	Segment(const Point& x, const Point& y) 

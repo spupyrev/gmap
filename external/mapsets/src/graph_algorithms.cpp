@@ -1,5 +1,7 @@
 #include "graph_algorithms.h"
 #include <queue>
+#include <set>
+#include <cassert>
 
 pair<VD, VI> GenericDijkstraMSTAlgorithm(const VI& nodes, const VVI& edges, const VVD& distances, int source, bool isDijkstra)
 {

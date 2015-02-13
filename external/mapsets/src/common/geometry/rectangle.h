@@ -23,16 +23,24 @@ public:
 		Add(rect1.xr, rect1.yr);
 	}
 
-	bool contains(const Point& p) const
+	Point minPoint() const
 	{
-		return ((xl <= p.x && p.x <= xr) && (yl <= p.y && p.y <= yr));
+		return Point(xl, yl);
 	}
 
-	bool intersects(const Rectangle& p) const
+	Point maxPoint() const
 	{
-		if (xr < p.xl || p.xr < xl) return false;
-		if (yr < p.yl || p.yr < yl) return false;
-		return true;
+		return Point(xr, yr);
+	}
+
+	double minX() const
+	{
+		return xl;
+	}
+
+	double minY() const
+	{
+		return yl;
 	}
 
 	double midX() const
@@ -65,6 +73,12 @@ public:
 		Add(p.x, p.y);
 	}
 
+	void Add(const Rectangle& r)
+	{
+		Add(r.minPoint());
+		Add(r.maxPoint());
+	}
+
 	void Add(double x, double y)
 	{
 		xl = min(xl, x);
@@ -72,4 +86,22 @@ public:
 		yl = min(yl, y);
 		yr = max(yr, y);
 	}
+
+	bool Contains(const Point& p) const
+	{
+		return ((xl <= p.x && p.x <= xr) && (yl <= p.y && p.y <= yr));
+	}
+
+	bool Contains(const Rectangle& r) const
+	{
+		return ((xl <= r.xl && r.xr <= xr) && (yl <= r.yl && r.yr <= yr));
+	}
+
+	bool Intersects(const Rectangle& p) const
+	{
+		if (xr < p.xl || p.xr < xl) return false;
+		if (yr < p.yl || p.yr < yl) return false;
+		return true;
+	}
+
 };

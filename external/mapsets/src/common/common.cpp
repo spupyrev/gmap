@@ -1,5 +1,7 @@
 #include "common/common.h"
 
+#include <algorithm>
+
 VS SplitNotNull(const string& ss, const string& c)
 {
 	string s = ss + c;
@@ -61,12 +63,22 @@ double Maximum(const vector<double>& v)
 
 double Minimum(const vector<double>& v)
 {
-	if ( v.empty() ) return 0;
+	if (v.empty()) return 0;
 
 	double res = v[0];
 	for (int i = 0; i < (int)v.size(); i++)
 		res = min(res, v[i]);
 	return res;
+}
+
+double Percentile(const vector<double>& v, int p)
+{
+	if (v.empty()) return 0;
+
+	int n = (int)v.size();
+	int pos = p * n / 100;
+	if (pos >= n) pos = n - 1;
+	return v[pos];
 }
 
 int Compare(double numberA, double numberB) 
@@ -84,6 +96,11 @@ bool Equal(double a, double b)
     return Abs(a - b) <= EPS;
 }
 
+bool Greater(double numberA, double numberB) 
+{
+    return Compare(numberA, numberB) > 0;
+}
+
 bool GreaterOrEqual(double numberA, double numberB) 
 {
     return Compare(numberA, numberB) >= 0;
@@ -92,4 +109,9 @@ bool GreaterOrEqual(double numberA, double numberB)
 bool LessOrEqual(double numberA, double numberB) 
 {
     return Compare(numberA, numberB) <= 0;
+}
+
+bool Less(double numberA, double numberB) 
+{
+    return Compare(numberA, numberB) < 0;
 }

@@ -5,6 +5,8 @@
 #include "graph_algorithms.h"
 #include "closest_point.h"
 
+#include <memory>
+
 typedef RNode<Segment> SegNode;
 typedef RTree<Segment> SegTree;
 
@@ -107,7 +109,7 @@ vector<vector<int> > VisibilityGraph::CreateVisibilityEdges(const vector<Visibil
 		nodes.push_back(node);
 	}
 
-	auto_ptr<SegTree> obstacleTree = auto_ptr<SegTree>(new SegTree(nodes));
+	auto obstacleTree = unique_ptr<SegTree>(new SegTree(nodes));
 	assert(obstacleTree->getRoot() != NULL);
 
 	vector<vector<int> > edges = VVI(vis.size(), VI());
@@ -167,7 +169,7 @@ vector<vector<int> > VisibilityGraph::CreateVisibilityEdges(const vector<Visibil
 
 bool IntersectRectangleWithRNode(SegNode* node, const Rectangle& rect, const VisibilityVertex& s, const VisibilityVertex& t)
 {
-	if (!node->getRectangle().intersects(rect)) return false;
+	if (!node->getRectangle().Intersects(rect)) return false;
 
 	if (!node->IsLeaf()) 
 	{

@@ -3,15 +3,10 @@
 #include "common/common.h"
 #include "common/random_utils.h"
 
+#include <cmath>
+
 class Point
 {
-	double F(double x)
-	{
-		double scale = 10;
-		if (Abs(x) < EPS) return 0.0;
-		return (log(x) + scale) / (2.0 * scale);
-	}
-
 public:
 	double x, y;
 
@@ -28,12 +23,17 @@ public:
 
 	bool operator < (const Point& p) const
 	{
-		return (x < p.x || (x == p.x && y < p.y));
+		return (Less(x, p.x) || (Equal(x, p.x) && Less(y, p.y)));
+	}
+
+	bool operator > (const Point& p) const
+	{
+		return (Greater(x, p.x) || (Equal(x, p.x) && Greater(y, p.y)));
 	}
 
 	bool operator == (const Point& p) const
 	{
-		return (Abs(x - p.x) < EPS && Abs(y - p.y) < EPS);
+		return (Equal(x, p.x) && Equal(y, p.y));
 	}
 
 	bool operator != (const Point& p) const
@@ -141,6 +141,18 @@ public:
 		Point ret = *this;
 		ret.Scale(1.0/s);
 		return ret;
+	}
+
+	string toString() const
+	{
+		return "(" + to_string((int)x) + "," + to_string((int)y) + ")";
+	}
+
+	double Hash(double x)
+	{
+		double scale = 10;
+		if (Abs(x) < EPS) return 0.0;
+		return (log(x) + scale) / (2.0 * scale);
 	}
 
     static double CrossProduct(Point point0, Point point1) 

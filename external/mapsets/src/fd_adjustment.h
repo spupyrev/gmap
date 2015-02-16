@@ -226,7 +226,7 @@ public:
 		//node boundaries
 		for (int i = 0; i < (int)hardObstacles.size(); i++)
 		{
-			if (hardObstacles[i].contains(nodePosition)) return false;
+			if (hardObstacles[i].Contains(nodePosition)) return false;
 
 			Point closestP = geometry::ClosestPoint(hardObstacles[i], nodePosition);
 			if (closestP.Distance(nodePosition) >= idealR) continue;
@@ -274,7 +274,7 @@ public:
 		for (int i = 0; i < (int)hardObstacles.size(); i++)
 		{
 			assert(node->isVirtual);
-			if (!adj->isVirtual && hardObstacles[i].contains(adjPosition)) continue;
+			if (!adj->isVirtual && hardObstacles[i].Contains(adjPosition)) continue;
 
 			Point p1, p2;
 			if (geometry::Intersect(hardObstacles[i], Segment(nodePosition, adjPosition), p1, p2)) return false;

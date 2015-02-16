@@ -1,9 +1,13 @@
 #pragma once
 
-#include "common/common.h"
 #include "common/geometry/point.h"
 #include "common/geometry/segment.h"
 #include "common/geometry/rectangle.h"
+
+#include <set>
+#include <map>
+#include <iostream>
+#include <cassert>
 
 class ConnectedDotGraph;
 
@@ -106,6 +110,9 @@ public:
 	Rectangle getBoundingRectangle()
 	{
 		Point p = getPos();
+		if (!hasAttr("width") || !hasAttr("height"))
+			return Rectangle(p);
+
 		double width = getWidth();
 		double height = getHeight();
 
@@ -183,13 +190,13 @@ public:
 
 	//make it all mutable!!!
 	map<string, vector<DotNode*> > clusters;
-	VVI adj;
-	VVI adjE;
+	vector<vector<int> > adj;
+	vector<vector<int> > adjE;
 	map<pair<DotNode*, DotNode*>, DotEdge*> adjEdge;
 
 	map<string, DotNode*> idToNode;
-	VI nodeDegree;
-	VD nodeWDegree;
+	vector<int> nodeDegree;
+	vector<double> nodeWDegree;
 	map<pair<DotNode*, DotNode*>, int> shortestPaths;
 	map<pair<DotNode*, DotNode*>, double> shortestPathsW;
 
@@ -218,11 +225,11 @@ public:
 		cout << "#nodes = " << nodes.size() << "  #edges = " << edges.size() << "  #clusters = " << ClusterCount() << endl;
 	}
 
-	void assignClusters(vector<vector<DotNode*> >& clust, int first)
+	void AssignClusters(vector<vector<DotNode*> >& clust, int first)
 	{
 		for (int i = 0; i < (int)clust.size(); i++)
 		{
-			string c = toString(i + first + 1);
+			string c = to_string(i + first + 1);
 			for (int j = 0; j < (int)clust[i].size(); j++)
 			{
 				clust[i][j]->attr["cluster"] = c;
@@ -374,7 +381,7 @@ public:
 	DotEdge* findEdge(DotNode* v, DotNode* u)
 	{
 		pair<DotNode*, DotNode*> pr = make_pair(v, u);
-		if (adjEdge.find(pr) == adjEdge.end()) return NULL;
+		if (adjEdge.find(pr) == adjEdge.end()) return nullptr;
 		return adjEdge[pr];
 	}
 

@@ -1,7 +1,9 @@
 #pragma once
 
-#include "common/common.h"
 #include "common/graph/dot_graph.h"
+
+#include <iostream>
+#include <fstream>
 
 class DotReader
 {
@@ -19,6 +21,11 @@ public:
 		{
 			ifstream fileStream;
 			fileStream.open(filename.c_str(), ios::in);
+			if (!fileStream)
+			{
+				cerr << "can't open input file '" << filename << "'" << endl;
+				throw 1;
+			}
 			lines = ReadLines(fileStream);
 			fileStream.close();
 		}

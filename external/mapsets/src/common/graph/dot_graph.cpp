@@ -1,5 +1,9 @@
 #include "common/graph/dot_graph.h"
 
+#include <algorithm>
+#include <queue>
+#include <functional>
+
 void DotGraph::initShortestPaths(DotNode* s, bool weighted)
 {
 	const double INF = 123456789.0;

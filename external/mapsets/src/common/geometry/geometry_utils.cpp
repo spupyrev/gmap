@@ -1,5 +1,7 @@
 #include "common/geometry/geometry_utils.h"
 
+#include <set>
+
 namespace geometry {
 
 double getMinX(vector<Point>& points)
@@ -182,6 +184,51 @@ int OrientationOf3Vectors(const Point& vector0, const Point& vector1, const Poin
 
     // vectors "less than" zero degrees are actually large, near 2 pi
     return -Compare(Sgn(xp1), 0.0);
+}
+
+// Find the Euclidean minimum spanning tree of the points
+// returns a sequence of parent indices for every point (parent=-1 indicates the root)
+vector<int> MinimumSpanningTree(const vector<Point>& points)
+{
+	int source = 0;
+
+	VI used = VI(points.size(), 0);
+	VI parent = VI(points.size(), -1);
+	VD dist(points.size(), INF);
+	dist[source] = 0;
+
+	typedef pair<double, int> QE;
+	set<QE> q;
+	q.insert(make_pair(0.0, source));
+ 
+	while (!q.empty())
+	{
+		//extract min
+		int now = (*q.begin()).second;
+		q.erase(q.begin());
+		used[now] = 1;
+
+		//update neighbors
+		for (int i = 0; i < (int)points.size(); i++)
+		{
+			int next = i;
+			if (used[next]) continue;
+
+			double newDist = points[now].Distance(points[next]);
+
+			if (dist[next] > newDist)
+			{
+				if (dist[next] != INF)
+					q.erase(q.find(make_pair(dist[next], next)));
+
+				dist[next] = newDist;
+				parent[next] = now;
+				q.insert(make_pair(dist[next], next));
+			}
+		}
+	}
+
+	return parent;
 }
 
 } // namespace geometry

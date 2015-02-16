@@ -6,6 +6,8 @@
 
 #include "quadtree.h"
 
+#include <algorithm>
+
 class ClosestPoint
 {
 	vector<Point> points;

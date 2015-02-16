@@ -1,6 +1,7 @@
 #pragma once 
 
 #include "common/geometry/rectangle.h"
+#include <cassert>
 
 template<class T>
 class RNode
@@ -84,7 +85,7 @@ public:
     /// brings the first leaf which rectangle was hit and the delegate is happy with the object
     RNode* FirstHitNode(const Point& point) 
 	{
-		if (rectangle.contains(point)) 
+		if (rectangle.Contains(point)) 
 		{
             if (IsLeaf())                    
                 return this;

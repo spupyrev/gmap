@@ -6,6 +6,7 @@
 #include <set>
 #include <map>
 #include <algorithm>
+#include <memory>
 #include <cassert>
 
 using namespace std;
@@ -23,9 +24,13 @@ private:
 
 	CMDOptions(const CMDOptions&);
 	CMDOptions& operator = (const CMDOptions&);
+	CMDOptions() {}
 
 public:
-	CMDOptions() {}
+	static unique_ptr<CMDOptions> Create()
+	{
+		return unique_ptr<CMDOptions>(new CMDOptions());
+	}
 
 	void Parse(int argc, char **argv)
 	{

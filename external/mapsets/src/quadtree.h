@@ -29,7 +29,7 @@ public:
 	bool insert(const Point& p)
 	{
 		// Ignore objects which do not belong in this quad tree
-		if (!boundary.contains(p))
+		if (!boundary.Contains(p))
 			return false; // object cannot be added
 
 		// If there is space in this quad tree, add the object here
@@ -67,13 +67,13 @@ public:
 		vector<Point> pointsInRange;
 
 		// Automatically abort if the range does not collide with this quad
-		if (!boundary.intersects(range))
+		if (!boundary.Intersects(range))
 			return pointsInRange; // empty list
 
 		// Check objects at this quad level
 		for (int i = 0; i < (int)points.size(); i++)
 		{
-			if (range.contains(points[i]))
+			if (range.Contains(points[i]))
 				pointsInRange.push_back(points[i]);
 		}
 
@@ -99,13 +99,13 @@ public:
 	bool containsInRange(const Rectangle& range)
 	{
 		// Automatically abort if the range does not collide with this quad
-		if (!boundary.intersects(range))
+		if (!boundary.Intersects(range))
 			return false; // empty list
 
 		// Check objects at this quad level
 		for (int i = 0; i < (int)points.size(); i++)
 		{
-			if (range.contains(points[i]))
+			if (range.Contains(points[i]))
 				return true;
 		}
 
@@ -125,13 +125,13 @@ public:
 	bool containsInRange(const Rectangle& range, const Point& self)
 	{
 		// Automatically abort if the range does not collide with this quad
-		if (!boundary.intersects(range))
+		if (!boundary.Intersects(range))
 			return false; // empty list
 
 		// Check objects at this quad level
 		for (int i = 0; i < (int)points.size(); i++)
 		{
-			if (points[i] != self && range.contains(points[i]))
+			if (points[i] != self && range.Contains(points[i]))
 				return true;
 		}
 

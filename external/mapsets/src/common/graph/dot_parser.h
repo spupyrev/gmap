@@ -38,6 +38,7 @@ public:
 			else if (isEdge(lines[i]))
 			{
 				DotEdge* e = ParseEdge(lines[i], g.edges.size());
+				if (g.edges.size() == 0 || g.edges.back()->s != e->s || g.edges.back()->t != e->t)
 				g.edges.push_back(e);
 			}
 			else if (isNode(lines[i]))

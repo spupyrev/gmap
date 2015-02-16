@@ -159,6 +159,12 @@ public:
 	{
 		return toDouble(getAttr(key));
 	}
+
+	void removeAttr(const string& key)
+	{
+		if (attr.find(key) != attr.end())
+			attr.erase(attr.find(key));
+	}
 };
 
 class DotGraph

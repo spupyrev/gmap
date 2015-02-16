@@ -31,6 +31,9 @@ void WriteGraph(const string& filename, DotGraph& g)
 {
 	//g.OutputStatistics();
 
+	for (auto node : g.edges)
+		node->removeAttr("pos");
+
 	DotWriter writer;
 	writer.WriteGraph(filename, g);
 }

@@ -36,7 +36,7 @@ void PrepareCMDOptions(int argc, char** argv, CMDOptions& args)
 	args.AddAllowedOption("-K", "", "Desired number of clusters (selected automatically, if no value is supplied)");
 
 	args.Parse(argc, argv);
-} 
+}
 
 void MetricsAction(const CMDOptions& options)
 {
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 	}
 	catch (int code)
 	{
-		returnCode = code;		
+		returnCode = code;
 	}
 
 	return returnCode;

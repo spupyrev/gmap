@@ -5,9 +5,10 @@
 {% block js %}
 {{ block.super }}
 {% load static %}
-	<script type="text/javascript" src="{% get_static_prefix %}js/jquery-1.10.2.min.js"></script>
-	<script type="text/javascript" src="{% get_static_prefix %}js/jquery.cookie.js"></script>
-    <script type="text/javascript">
+<script type="text/javascript" src="{% get_static_prefix %}js/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="{% get_static_prefix %}js/jquery.cookie.js"></script>
+<script type="text/javascript" src="{% get_static_prefix %}js/dotparser.min.js"></script>
+<script type="text/javascript">
 
 function pasteStaticGraph(graph) {
 	var ta = document.getElementById("dotfile");
@@ -18,11 +19,27 @@ function pasteStaticGraph(graph) {
 	});
 }
 
-function checkTextArea(form) {
-    if (form.dotfile.value.trim() == "") {
-    	form.dotfile.focus();
-        return false;
-    }
+function checkTextArea(form)
+{
+	var content = form.dotfile.value.trim();
+	if (content == "")
+	{
+		form.dotfile.focus();
+		return false;
+	}
+
+	try
+	{
+		DotParser.parse(content);
+	}
+	catch (err)
+	{
+		alert("Input is not a valid dot string: '" + err.message + "'");
+		form.dotfile.focus();
+		return false;
+	}
+
+	return true;
 }
 
 function toggleAdvanced(first_load) {
@@ -45,7 +62,7 @@ function toggleAdvanced(first_load) {
 	}
 }
 
-	</script>
+</script>
 {% endblock %}
 
 {% block content %}
@@ -53,102 +70,102 @@ function toggleAdvanced(first_load) {
 	<img alt="GMap" height="95" src="{% get_static_prefix %}img/logo_gmap.png" width="272" style="padding-top:15px" />
 </div>
 <form method="post" action="{% url 'maps:request_map' %}" accept-charset="UTF-8" onsubmit="return checkTextArea(this)">
-{% csrf_token %}
-<div>
-	<div class="wide center">
-		<textarea name="dotfile" id="dotfile" class="wide" spellcheck="false" autofocus="autofocus" maxlength="10000000" placeholder="Paste a DOT file..."></textarea>
-		<div >
-			<font style="color:#999">...or try an example:</font> 	
-						<a class="small" onclick="pasteStaticGraph('sample.gv')">Sample</a>, 
-						<a class="small" onclick="pasteStaticGraph('COLORS_50.gv')">Colors</a>, 
-						<a class="small" onclick="pasteStaticGraph('TRADE_150.gv')">TradeLand</a>, 
-						<a class="small" onclick="pasteStaticGraph('MUSIC_250.gv')">MusicLand</a>, 
-						<a class="small" onclick="pasteStaticGraph('RECIPES_350.gv')">Recipes</a>,
-						<a class="small" onclick="pasteStaticGraph('BOOK_500.gv')">BookLand</a>,
-						<a class="small" onclick="pasteStaticGraph('univ.gv')">Universities</a>
+	{% csrf_token %}
+	<div>
+		<div class="wide center">
+			<textarea name="dotfile" id="dotfile" class="wide" spellcheck="false" autofocus="autofocus" maxlength="10000000" placeholder="Paste a DOT file..."></textarea>
+			<div >
+				<font style="color:#999">...or try an example:</font>
+				<a class="small" onclick="pasteStaticGraph('sample.gv')">Sample</a>,
+				<a class="small" onclick="pasteStaticGraph('COLORS_50.gv')">Colors</a>,
+				<a class="small" onclick="pasteStaticGraph('TRADE_150.gv')">TradeLand</a>,
+				<a class="small" onclick="pasteStaticGraph('MUSIC_250.gv')">MusicLand</a>,
+				<a class="small" onclick="pasteStaticGraph('RECIPES_350.gv')">Recipes</a>,
+				<a class="small" onclick="pasteStaticGraph('BOOK_500.gv')">BookLand</a>,
+				<a class="small" onclick="pasteStaticGraph('univ.gv')">Universities</a>
+			</div>
+		</div>
+
+		<div style="margin:10px">
+			<table class="wide center"><tbody>
+					<tr>
+						<td style="width: 20%">
+						</td>
+						<td style="width: 60%">
+							<div style="text-align: center">
+								<input id='submit' value='Create Map' type='submit' class="btn btn-primary"/>
+							</div>
+						</td>
+						<td style="width: 20%">
+							<a class="small" onclick="toggleAdvanced(false)" id="adv_link">Show Advanced Options</a>
+						</td>
+					</tr>
+			</tbody></table>
+		</div>
+
+		<div id='map_advanced_options' class="wide center hide">
+			<script>toggleAdvanced(true)</script>
+			<fieldset>
+				<legend>advanced options for map generation</legend>
+
+				<div style="width: 50%; float:left">
+					<label for='vis_type' class="labelAdvanced">Visualization Type:</label>
+					<select name="vis_type" id="vis_type">
+						<option value="node-link">Node-Link Diagram</option>
+						<option value="gmap" selected='selected'>GMap</option>
+						<option value="map-sets">Map Sets</option>
+						<option value="bubble-sets">Bubble Sets</option>
+						<option value="line-sets">Line Sets</option>
+					</select><br>
+
+					<label for='layout_algorithm' class="labelAdvanced">Layout Algorithm:</label>
+					<select name="layout_algorithm" id="layout_algorithm">
+						<option value="sfdp" selected='selected'>sfdp</option>
+						<option value="neato">neato</option>
+						<option value="graph">use graph setting</option>
+					</select><br>
+
+					<label for='cluster_algorithm' class="labelAdvanced">Cluster Algorithm:</label>
+					<select name="cluster_algorithm" id="cluster_algorithm">
+						<optgroup label="fragmented">
+							<option value="infomap">infomap</option>
+							<option value="modularity">modularity</option>
+							<option value="k-means">k-means</option>
+							<option value="hierarchical">hierarchical</option>
+						</optgroup>
+						<optgroup label="contiguous">
+							<option value="cont-infomap">infomap</option>
+							<option value="cont-modularity">modularity</option>
+							<option value="cont-k-means" selected='selected'>k-means</option>
+							<option value="cont-hierarchical">hierarchical</option>
+						</optgroup>
+						<option value="graph">use graph setting</option>
+					</select><br>
+				</div>
+
+				<div style="width: 50%; float:right">
+					<label for='color_scheme' class="labelAdvanced">Color Scheme:</label>
+					<select name="color_scheme" id="color_scheme">
+						<option value="0">no polygons</option>
+						<option value="1" selected='selected'>pastel</option>
+						<option value="2">blue to yellow</option>
+						<option value="3">white to red</option>
+						<option value="4">light grey to red</option>
+						<option value="5">primary colors</option>
+						<option value="6">sequential single hue red</option>
+						<option value="7">Adam color scheme</option>
+						<option value="8">Adam blend</option>
+						<option value="9">sequential single hue lighter red</option>
+						<option value="10">light grey</option>
+						<option value="bubble-sets">Bubble Sets</option>
+					</select>
+
+					<label for='semantic_zoom' class="labelAdvanced">Semantic Zoom:</label>
+					<input type="checkbox" name="semantic_zoom" value="true" />
+				</div>
+			</fieldset>
 		</div>
 	</div>
-
-	<div style="margin:10px">
-	<table class="wide center"><tbody>
-		<tr>
-			<td style="width: 20%">
-			</td>
-			<td style="width: 60%">
-				<div style="text-align: center">
-			    <input id='submit' value='Create Map' type='submit' class="btn btn-primary"/>
-			    </div>
-			</td>
-			<td style="width: 20%">
-				<a class="small" onclick="toggleAdvanced(false)" id="adv_link">Show Advanced Options</a>
-			</td>
-		</tr>
-	</tbody></table>
-	</div>
-
-    <div id='map_advanced_options' class="wide center hide">
-		<script>toggleAdvanced(true)</script>
-	    <fieldset>
-        	<legend>advanced options for map generation</legend>
-
-        	<div style="width: 50%; float:left">
-            <label for='vis_type' class="labelAdvanced">Visualization Type:</label>
-            <select name="vis_type" id="vis_type">
-                <option value="node-link">Node-Link Diagram</option>
-                <option value="gmap" selected='selected'>GMap</option>
-                <option value="map-sets">Map Sets</option>
-                <option value="bubble-sets">Bubble Sets</option>
-                <option value="line-sets">Line Sets</option>
-            </select><br>
-
-            <label for='layout_algorithm' class="labelAdvanced">Layout Algorithm:</label>
-            <select name="layout_algorithm" id="layout_algorithm">
-               	<option value="sfdp" selected='selected'>sfdp</option>
-                <option value="neato">neato</option>
-                <option value="graph">use graph setting</option>
-            </select><br>
-
-            <label for='cluster_algorithm' class="labelAdvanced">Cluster Algorithm:</label>
-            <select name="cluster_algorithm" id="cluster_algorithm">
-            	<optgroup label="fragmented">
-            		<option value="infomap">infomap</option>
-            		<option value="modularity">modularity</option>
-	                <option value="k-means">k-means</option>
-	                <option value="hierarchical">hierarchical</option>
-            	</optgroup>
-            	<optgroup label="contiguous">
-            		<option value="cont-infomap">infomap</option>
-	            	<option value="cont-modularity">modularity</option>
-	                <option value="cont-k-means" selected='selected'>k-means</option>
-	                <option value="cont-hierarchical">hierarchical</option>
-            	</optgroup>
-                <option value="graph">use graph setting</option>
-            </select><br>
-            </div>
-
-            <div style="width: 50%; float:right">
-            <label for='color_scheme' class="labelAdvanced">Color Scheme:</label>
-               <select name="color_scheme" id="color_scheme">
-               	<option value="0">no polygons</option>
-                <option value="1" selected='selected'>pastel</option>
-                <option value="2">blue to yellow</option>
-                <option value="3">white to red</option>
-                <option value="4">light grey to red</option>
-                <option value="5">primary colors</option>
-                <option value="6">sequential single hue red</option>
-                <option value="7">Adam color scheme</option>
-                <option value="8">Adam blend</option>
-                <option value="9">sequential single hue lighter red</option>
-                <option value="10">light grey</option>
-                <option value="bubble-sets">Bubble Sets</option>
-            </select>
-
-            <label for='semantic_zoom' class="labelAdvanced">Semantic Zoom:</label>
-				<input type="checkbox" name="semantic_zoom" value="true" />
-            </div>
-        </fieldset>
-	</div>
-</div>
 
 </form>
 {% endblock %}

@@ -186,7 +186,7 @@ void ClusterAlgorithm::cluster(DotGraph& g, int K)
 		K = (int)connG.size();
 	}
 
-	//sort by the number of nodes
+	//TODO: sort by the number of nodes
 	sort(connG.begin(), connG.end());
 	int curK = 0;
 	for (int i = 0; i < (int)connG.size(); i++)

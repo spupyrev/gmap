@@ -30,7 +30,8 @@ function checkTextArea(form)
 
 	try
 	{
-		DotParser.parse(content);
+		if (content.length <= 250000)
+			DotParser.parse(content);
 	}
 	catch (err)
 	{

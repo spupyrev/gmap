@@ -5,6 +5,18 @@
 #include <iostream>
 #include <cassert>
 
+class ABC
+{
+public:
+	string public_data;
+private:
+	string private_data;
+
+	inline void someFunction()
+	{
+	}
+}
+
 ClusteringInfo::ClusteringInfo(ConnectedDotGraph* g, const VVN& groups)
 {
 	this->g = g;

@@ -21,7 +21,8 @@ def create_task(task_parameters, user_ip):
 	task.cluster_algorithm = task_parameters['cluster_algorithm']
 	task.contiguous_algorithm = 'contiguous_algorithm'
 	task.color_scheme = task_parameters['color_scheme']
-	task.semantic_zoom = task_parameters.get('semantic_zoom', 'false')
+	task.semantic_zoom = task_parameters.get('semantic_zoom', 'false')	
+	task.spherical = task_parameters['spherical']
 	task.status = 'created'
 
 	task.save()                                     

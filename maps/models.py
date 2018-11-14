@@ -27,6 +27,7 @@ class Task(models.Model):
 
     color_scheme  = models.CharField(max_length=64)
     semantic_zoom  = models.CharField(max_length=64)
+    spherical = models.CharField(max_length=64)
 
     def metadata(self):
         return {
@@ -35,6 +36,7 @@ class Task(models.Model):
             'width': self.width,
             'height': self.height,
             'semantic_zoom': self.semantic_zoom,
+            'spherical': self.spherical
         }
 
     def json_metadata(self):
@@ -47,6 +49,7 @@ class Task(models.Model):
         desc += 'Cluster Algorithm: ' + self.cluster_algorithm + '\n'
         desc += 'Color Scheme: ' + self.color_scheme + '\n'
         desc += 'Semantic Zoom: ' + self.semantic_zoom + '\n'
+        desc += 'Spherical" ' + self.spherical + '\n'
         return desc
 
         

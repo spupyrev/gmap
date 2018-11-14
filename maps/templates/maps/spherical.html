@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% block title %}{{ block.super }} :: map{% endblock %}
+
+{% block js %}
+{{ block.super }}
+{% load static %}
+<title>Spherical Force-Directed Layout</title>
+<script src="http://d3js.org/d3.v4.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5/dat.gui.min.js"></script>
+<script type="text/javascript" src="{% get_static_prefix %}js/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="{% get_static_prefix %}js/jquery-ui-1.10.3.custom.min.js"></script>
+
+<script src="{% get_static_prefix %}openlayers/OpenLayers-min.js"></script>
+<script src="{% get_static_prefix %}openlayers/InlineXhtml/lib/OpenLayers/Tile/InlineXhtml.js"></script>
+<script src="{% get_static_prefix %}openlayers/InlineXhtml/lib/OpenLayers/Layer/ScalableInlineXhtml.js"></script>
+
+<style type="text/css">
+    body {
+        padding: 0;
+        margin: 0;
+    }
+
+    .graticule {
+        fill: none;
+        stroke: #777;
+        stroke-width: .5px;
+        stroke-opacity: 1;
+    }
+
+    path.link {
+        stroke: #999;
+        fill-opacity: 0
+    }
+</style>
+
+<script type="text/javascript">
+
+    var config, width, height, node, link, borders, fills, projection, projectionEquidistant, path, svgGraticule, svg, jsongraph, chunk, MAXWIDTH = 16;
+
+    $(document).ready(function () {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        
+        svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+        var graticule = d3.geoGraticule();
+
+        config = { "projection": "Orthographic", "clip": false, "friction": .9, "linkStrength": 1, "linkDistance": 20, "charge": 60, "gravity": .1, "theta": .8 };
+
+        projection = d3.geoOrthographic()
+        .scale(height / $("#scale").val())
+        .translate([(width / 2), height / 2])
+        .clipAngle(90);
+
+        projectionEquidistant = d3.geoEquirectangular()
+        .scale(height / 2)
+        .translate([(width / 2), height / 2]);
+        
+        $("#scale").on("input", function () {
+            chunk = height / $("#scale").attr("max");
+            projectionEquidistant.scale(height / 2);
+            projection.scale(height - chunk * $("#scale").val());
+
+            svg.selectAll("path.graticule")
+                .attr("d", path);
+            
+            updateGraph(jsongraph);
+            updateLabels();
+        });
+
+        path = d3.geoPath()
+        .projection(projection);
+
+        svgGraticule = svg.append("path")
+        .datum(graticule)
+        .attr("class", "graticule")
+        .attr("d", path);
+
+        svg.call(d3.drag()
+        .subject(function () { var r = projection.rotate(); svgGraticule.attr("d", path); return { x: 2 * r[0], y: -2 * r[1] }; })
+        .on("drag", function () { svgGraticule.attr("d", path); var r = [d3.event.x / 2, -d3.event.y / 2, projection.rotate()[2]]; t0 = Date.now(); origin = r; projection.rotate(r); updateGraph(jsongraph); updateLabels();}));
+    
+        get_map(100);
+    });
+
+    function get_map(delay) {
+        $.ajax({
+            dataType: "json",
+            type: "GET",
+            url: "{% url 'maps:get_task_metadata' task.id %}",
+            async: true,
+            cache: false,
+            timeout: 300000,
+            success: function (task) {
+                if (task.status == 'completed') {
+                    if (task.semantic_zoom == 'false') {
+                        display_map("{% url 'maps:get_json' task.id %}", task.width, task.height);
+                    }
+                    else {
+                        var urls = new Array();
+                        for (var i = 0; i < SVG_ZOOM_LEVELS; i++)
+                            urls.push("{% url 'maps:get_map_zoomed' task.id %}?zoom=" + i);
+
+                        display_map_with_zoom(urls, task.width, task.height);
+                    }
+                    $('#status').hide();
+                }
+                else {
+                    $('#status_text').html('Status: ' + task.status);
+                    if (task.status.indexOf("error") != 0)
+                        setTimeout(get_map, delay, Math.min(delay * 2, 5000));
+                    else
+                        $('#status_indicator').hide();
+                }
+            },
+            // handle error
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                //alert(textStatus + " " + errorThrown);
+                // try again in 10 seconds if there was a request error
+                setTimeout(get_map, delay, Math.min(delay * 2, 5000));
+            },
+        });
+    }
+
+    function display_map(map_url, width, height) {
+        $.ajax({
+            dataType: "json",
+            type: "GET",
+            url: map_url,
+            async: true,
+            cache: false,
+            timeout: 300000,
+            success: function (task) {
+                jsongraph = task;
+                drawGraph(jsongraph);
+            },
+            // handle error
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                //alert(textStatus + " " + errorThrown);
+                // try again in 10 seconds if there was a request error
+                setTimeout(display_map, map_url, width, height, delay, Math.min(delay * 2, 5000));
+            },
+        });
+    }
+
+    function display_map_with_zoom(map_urls, width, height) {
+        var scale0 = Math.max(height / (window.innerHeight - 80), width / (window.innerWidth));
+        var S = 0.7;
+        var res = [scale0];
+        for (var i = 1; i < VIEW_ZOOM_LEVELS; i++)
+            res.push(res[i - 1] * S);
+
+        var bounds = new OpenLayers.Bounds(0, -1 * height, width, 0);
+        map_options = {
+            controls: [
+                new OpenLayers.Control.Navigation(),
+                new OpenLayers.Control.PanZoomBar(),
+            ],
+            //maxExtent: bounds,
+            //numZoomLevels: 5,
+            fractionalZoom: true,
+            resolutions: res,
+        }
+        map = new OpenLayers.Map("map", map_options);
+
+        var gmaps = new Array();
+        for (var i = 0; i < SVG_ZOOM_LEVELS; i++) {
+            var gmap = new OpenLayers.Layer.ScalableInlineXhtml(
+                "GMap",
+                map_urls[i],
+                bounds,
+                null,
+                { isBaseLayer: true, opacity: '1.0' });
+            gmap.adjustBounds(bounds);
+
+            gmaps.push(gmap);
+        }
+
+        var svg = $('svg');
+        map.addLayers(gmaps);
+        for (var i = 0; i < gmaps.length; i++)
+            gmaps[i].setVisibility(false);
+        map.zoomToExtent(bounds);
+
+        var curZoom = getZoomSafe(0, gmaps.length - 1, map.getZoom());
+        gmaps[curZoom].setVisibility(true);
+
+        map.events.register("zoomend", map, function () {
+            zoom = map.getZoom();
+            for (var i = 0; i < gmaps.length; i++)
+                gmaps[i].setVisibility(false);
+
+            zoom = getZoomSafe(0, gmaps.length - 1, map.getZoom());
+            gmaps[zoom].setVisibility(true);
+        });
+
+    }
+
+    function getZoomSafe(lower, upper, value) {
+        var zoom = value.toFixed();
+        zoom = Math.max(lower, zoom);
+        zoom = Math.min(upper, zoom);
+        return zoom;
+    }
+
+    /*document.getElementById("scale").oninput = function () {
+        projectionEquidistant.scale(height / (document.getElementById("scale").value));
+        force.restart();
+    }*/
+
+    
+    function drawGraph(graph) {
+        link = svg.selectAll("path.link")
+            .data(graph.links)
+            .enter().append("path").attr("class", "link")
+            .attr("stroke-width", function (d) { return 1; });
+
+        node = svg.selectAll("path.node")
+            .data(graph.nodes)
+            .enter().append("path").attr("class", "node")
+            .style("fill", function (d) { if (d.color != null) return d.color; return d.clustercolor; })
+            .style("stroke", function (d) { if (d.color != null) return d.color; return d.clustercolor; })
+            .style("stroke-width", function (d) {return Math.min(5 - $("#scale").val(), MAXWIDTH);})
+            .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Point", "coordinates": projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]) } }); console.log(p); return p ? p : 'M 0 0' })
+            .attr("x", function (d) { return projection(projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]))[0]; })
+            .attr("y", function (d) { return projection(projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]))[1] - 5; })
+            .attr("x1", function (d) { return projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])])[0]; })
+            .attr("y1", function (d) { return projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])])[1]; });
+
+        link.attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "LineString", "coordinates": [projectionEquidistant.invert([parseFloat(graph.nodes.find(obj => { return obj.id == d.source}).pos.split(',')[0]), parseFloat(graph.nodes.find(obj => { return obj.id == d.source}).pos.split(',')[1])]), projectionEquidistant.invert([parseFloat(graph.nodes.find(obj => { return obj.id == d.target}).pos.split(',')[0]), parseFloat(graph.nodes.find(obj => { return obj.id == d.target}).pos.split(',')[1])])] } }); return p ? p : 'M 0 0' });
+        updateLabels();
+
+        borders = svg.selectAll("path.borders");
+
+        fills = svg.selectAll("path.fills");
+
+        var regions = graph.graph.graph._background.trim().split(/\s+/);
+        var color;
+
+        // parse xdot for region info
+        /*for (var i = 0; i < regions.length; i++) {
+            if (regions[i] == "c"){
+                i += 2;
+                var colorString = regions[i];
+                for (var j = 0; j < colorString.length; j++) {
+                    if (colorString.charAt(j) != '-' && colorString.charAt(j) != '#') {
+                        color = parseInt(colorString.substring(j), 16);
+                        
+                    }
+                }
+            } else if (regions[i] == "P") {
+                i++;
+                var size = parseInt(regions[i]) / 2;
+                i++;
+                var poly = [[[]]];
+                for (var j = 0; j < size; j++) {
+                    var inverted = projectionEquidistant.invert([parseFloat(regions[i+2*j]), parseFloat(regions[i+2*j+1])])
+                    poly[0][j] = [inverted[0], inverted[1]];
+                }
+                console.log(color);
+                svg.append("path").attr("class", "fills")
+                .style("fill", function (d) { return 0; })
+                .style("stroke", function (d) { return colorString; })
+                .style("opacity", function(d) {return .25;})
+                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Polygon", "coordinates": poly } }); console.log(p); return p;})
+            }
+        }*/
+
+        svg.append("path").attr("class", "fills")
+                .style("fill", function (d) { return 0; })
+                .style("stroke", function (d) { return 0; })
+                .style("opacity", function(d) {return .25;})
+                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Polygon", "coordinates": [[projectionEquidistant.invert([0, 0]), projectionEquidistant.invert([0, 10000]), projectionEquidistant.invert([10000, 10000]), projectionEquidistant.invert([0, 0]), projectionEquidistant.invert([10000, 0])]] } }); console.log(projectionEquidistant.invert([0, 0])); console.log(projectionEquidistant.invert([0, 10000])); console.log(projectionEquidistant.invert([10000, 10000])); console.log(projectionEquidistant.invert([10000, 0])); return p;})
+        
+    }
+
+    function updateGraph(graph) {
+        node.each(function (d) {
+            d3.select(this)
+            .style("stroke-width", function (d) {return Math.min(5 - $("#scale").val(), MAXWIDTH);})
+            .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Point", "coordinates": projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]) } }); console.log(p); return p ? p : 'M 0 0' })
+            .attr("x", function (d) { return projection(projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]))[0]; })
+            .attr("y", function (d) { return projection(projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]))[1] - 5; })
+            .attr("x1", function (d) { return projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])])[0]; })
+            .attr("y1", function (d) { return projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])])[1]; });
+        });
+
+        link.each(function (d) {
+            d3.select(this).attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "LineString", "coordinates": [projectionEquidistant.invert([parseFloat(graph.nodes.find(obj => { return obj.id == d.source}).pos.split(',')[0]), parseFloat(graph.nodes.find(obj => { return obj.id == d.source}).pos.split(',')[1])]), projectionEquidistant.invert([parseFloat(graph.nodes.find(obj => { return obj.id == d.target}).pos.split(',')[0]), parseFloat(graph.nodes.find(obj => { return obj.id == d.target}).pos.split(',')[1])])] } }); return p ? p : 'M 0 0' });
+        });
+    }
+
+    function updateLabels() {
+        d3.selectAll("text").remove();
+        node.each(function (d) {
+            var temp = d3.select(this);
+
+            var distance = d3.geoDistance(
+                [temp.attr("x1"), temp.attr("y1")],
+                projection.invert([width / 2, height / 2]));
+
+            if (distance < 1.57079632679490) {
+                svg
+                    .append("svg:text")
+                    .text(function (e) {
+                        if (d.label != null)
+                            return d.label;
+                        return d.id;
+                    })
+                    .attr("x", function (e) {
+                        return temp.attr("x");
+                    })
+                    .attr("y", function (e) {
+                        return temp.attr("y");
+                    })
+                    .attr("text-anchor", "middle")
+                    .attr('fill', 'black');
+            }
+        })
+    }
+
+</script>
+{% endblock %}
+{% block content %}
+<input type="range" min="-100" max="100" value="2" class="slider" id="scale">
+{% endblock %}

@@ -1,4 +1,4 @@
-from os import getpid, kill, wait
+from os import getpid, kill
 from signal import SIGINT
 from django.core.management import call_command
 from StringIO import StringIO

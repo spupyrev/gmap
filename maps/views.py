@@ -6,7 +6,12 @@ from lib.interface import CallExternalException
 from maps.models import Task
 import thread
 import time
+import json
+import pygraphviz
 from time import strftime
+import networkx as nx
+from networkx.readwrite import json_graph
+from networkx.drawing import nx_agraph
 
 def index(request):
 	return render(request, 'maps/index.html')
@@ -75,6 +80,8 @@ def display_map(request, task_id, format = ''):
 	if request.method == 'GET':
 		task = get_object_safe(task_id, 10)
 		if format == '':
+			if task.spherical:
+				return render(request, 'maps/spherical.html', {'task': task})
 			return render(request, 'maps/map.html', {'task': task})
 		else:
 			if format in MIME_TYPES:
@@ -84,6 +91,13 @@ def display_map(request, task_id, format = ''):
 				return HttpResponse(task.input_dot, 'text/plain')
 			elif format == 'input_desc':
 				return HttpResponse(task.description(), 'text/plain')
+
+def get_json(request, task_id):
+	if request.method == 'GET':
+		task = Task.objects.get(id = task_id)
+		dot_graph = nx_agraph.from_agraph(pygraphviz.AGraph(task.dot_rep))
+  		graph_json = json.dumps(json_graph.node_link_data(dot_graph))
+		return HttpResponse(graph_json, content_type='application/json')
 
 def get_task_metadata(request, task_id):
     if request.method == 'GET':

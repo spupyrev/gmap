@@ -212,6 +212,39 @@
 
     
     function drawGraph(graph) {
+        fills = svg.selectAll("path.fills");
+
+var regions = graph.graph.graph._background.trim().split(/\s+/);
+console.log(regions);
+var color;
+
+// parse xdot for region info
+for (var i = 0; i < regions.length; i++) {
+    if (regions[i] == "c"){
+        i += 2;
+        var colorString = regions[i];
+    
+        if (colorString.charAt(0) == '-') {
+            colorString = colorString.substring(1);
+        }
+    } else if (regions[i] == "P") {
+        i++;
+        var size = parseInt(regions[i]);
+        console.log(size);
+        var poly = [[[]]];
+        for (var j = size, k = 0; j > 0; j--, k++) {
+            var inverted = projectionEquidistant.invert([parseFloat(regions[i+2*j-1]), parseFloat(regions[i+2*j])])
+            poly[0][k] = [inverted[0], inverted[1]];
+        }
+        poly[0][k] = poly[0][0];
+        console.log(poly);
+        svg.append("path").attr("class", "fills")
+        .style("fill", function (d) { return colorString; })
+        .style("stroke", function (d) { return colorString; })
+        .style("opacity", function(d) {return .4;})
+        .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Polygon", "coordinates": poly } }); return p;})
+    }
+}
         link = svg.selectAll("path.link")
             .data(graph.links)
             .enter().append("path").attr("class", "link")
@@ -234,49 +267,52 @@
 
         borders = svg.selectAll("path.borders");
 
-        fills = svg.selectAll("path.fills");
+  
 
-        var regions = graph.graph.graph._background.trim().split(/\s+/);
-        var color;
-
-        // parse xdot for region info
-        /*for (var i = 0; i < regions.length; i++) {
-            if (regions[i] == "c"){
-                i += 2;
-                var colorString = regions[i];
-                for (var j = 0; j < colorString.length; j++) {
-                    if (colorString.charAt(j) != '-' && colorString.charAt(j) != '#') {
-                        color = parseInt(colorString.substring(j), 16);
-                        
-                    }
-                }
-            } else if (regions[i] == "P") {
-                i++;
-                var size = parseInt(regions[i]) / 2;
-                i++;
-                var poly = [[[]]];
-                for (var j = 0; j < size; j++) {
-                    var inverted = projectionEquidistant.invert([parseFloat(regions[i+2*j]), parseFloat(regions[i+2*j+1])])
-                    poly[0][j] = [inverted[0], inverted[1]];
-                }
-                console.log(color);
-                svg.append("path").attr("class", "fills")
-                .style("fill", function (d) { return 0; })
-                .style("stroke", function (d) { return colorString; })
-                .style("opacity", function(d) {return .25;})
-                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Polygon", "coordinates": poly } }); console.log(p); return p;})
-            }
-        }*/
-
-        svg.append("path").attr("class", "fills")
+        /*svg.append("path").attr("class", "fills")
                 .style("fill", function (d) { return 0; })
                 .style("stroke", function (d) { return 0; })
                 .style("opacity", function(d) {return .25;})
-                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Polygon", "coordinates": [[projectionEquidistant.invert([0, 0]), projectionEquidistant.invert([0, 10000]), projectionEquidistant.invert([10000, 10000]), projectionEquidistant.invert([0, 0]), projectionEquidistant.invert([10000, 0])]] } }); console.log(projectionEquidistant.invert([0, 0])); console.log(projectionEquidistant.invert([0, 10000])); console.log(projectionEquidistant.invert([10000, 10000])); console.log(projectionEquidistant.invert([10000, 0])); return p;})
-        
+                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Polygon", "coordinates": [[projectionEquidistant.invert([0, 0]), projectionEquidistant.invert([100, 0]), projectionEquidistant.invert([100, 100]), projectionEquidistant.invert([0, 100]), projectionEquidistant.invert([0, 0])]] } }); console.log(projectionEquidistant.invert([0, 0])); console.log(projectionEquidistant.invert([0, 10])); console.log(projectionEquidistant.invert([10, 10])); console.log(projectionEquidistant.invert([10, 0])); return p;})
+        */
     }
 
     function updateGraph(graph) {
+        
+        var regions = graph.graph.graph._background.trim().split(/\s+/);
+        console.log(regions);
+        var color;
+
+        svg.selectAll("path.fills").remove();
+
+        // parse xdot for region info
+        for (var i = 0; i < regions.length; i++) {
+            if (regions[i] == "c"){
+                i += 2;
+                var colorString = regions[i];
+                if (colorString.charAt(0) == '-') {
+                    colorString = colorString.substring(1);
+                }
+            } else if (regions[i] == "P") {
+                i++;
+                var size = parseInt(regions[i]);
+                console.log(size);
+                var poly = [[[]]];
+                for (var j = size, k = 0; j > 0; j--, k++) {
+                    var inverted = projectionEquidistant.invert([parseFloat(regions[i+2*j-1]), parseFloat(regions[i+2*j])])
+                    poly[0][k] = [inverted[0], inverted[1]];
+                }
+                poly[0][k] = poly[0][0];
+                console.log(poly);
+                svg.append("path").attr("class", "fills")
+                .style("fill", function (d) { return colorString; })
+                .style("stroke", function (d) { return colorString; })
+                .style("opacity", function(d) {return .4;})
+                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Polygon", "coordinates": poly } }); return p;})
+            }
+        }
+        
+        console.log(graph);
         node.each(function (d) {
             d3.select(this)
             .style("stroke-width", function (d) {return Math.min(5 - $("#scale").val(), MAXWIDTH);})
@@ -290,6 +326,7 @@
         link.each(function (d) {
             d3.select(this).attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "LineString", "coordinates": [projectionEquidistant.invert([parseFloat(graph.nodes.find(obj => { return obj.id == d.source}).pos.split(',')[0]), parseFloat(graph.nodes.find(obj => { return obj.id == d.source}).pos.split(',')[1])]), projectionEquidistant.invert([parseFloat(graph.nodes.find(obj => { return obj.id == d.target}).pos.split(',')[0]), parseFloat(graph.nodes.find(obj => { return obj.id == d.target}).pos.split(',')[1])])] } }); return p ? p : 'M 0 0' });
         });
+
     }
 
     function updateLabels() {

@@ -83,6 +83,7 @@
         .on("drag", function () { svgGraticule.attr("d", path); var r = [d3.event.x / 2, -d3.event.y / 2, projection.rotate()[2]]; t0 = Date.now(); origin = r; projection.rotate(r); updateGraph(jsongraph); updateLabels();}));
     
         get_map(100);
+        print_adjacency_matrix();
     });
 
     function get_map(delay) {

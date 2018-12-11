@@ -4,4 +4,4 @@ import networkx as nx
 
 def dot_to_adjacency_matrix(dotGraph):
     G = nx_agraph.from_agraph(dotGraph)
-    return nx.adjacency_matrix(G)
+    return nx.to_numpy_matrix(G)

@@ -13,5 +13,6 @@ urlpatterns = patterns('',
     url(r'^get_map_zoomed/(\d*)$', views.get_map_zoomed, name='get_map_zoomed'),
     url(r'^get_task_metadata/(\d*)/$', views.get_task_metadata, name='get_task_metadata'),
     url(r'^get_json/(\d*)/$', views.get_json, name='get_json'),
+    url(r'^get_adjacency_matrix/(\d*)/$', views.get_adjacency_matrix, name='get_adjacency_matrix'),
     url(r'^request_map/$', views.request_map, name='request_map'),
 )

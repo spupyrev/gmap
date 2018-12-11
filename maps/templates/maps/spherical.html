@@ -145,6 +145,22 @@
         });
     }
 
+    function print_adjacency_matrix() {
+        $.ajax({
+            dataType: "json",
+            type: "GET",
+            url: "{% url 'maps:get_adjacency_matrix' task.id %}",
+            async: true,
+            cache: false,
+            timeout: 300000,
+            success: function (task) {
+            },
+            // handle error
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+            },
+        });
+    }
+
     function display_map_with_zoom(map_urls, width, height) {
         var scale0 = Math.max(height / (window.innerHeight - 80), width / (window.innerWidth));
         var S = 0.7;

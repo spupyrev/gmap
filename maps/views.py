@@ -12,6 +12,7 @@ from time import strftime
 import networkx as nx
 from networkx.readwrite import json_graph
 from networkx.drawing import nx_agraph
+from lib.sphere_mds import dot_to_adjacency_matrix
 
 def index(request):
 	return render(request, 'maps/index.html')
@@ -98,6 +99,12 @@ def get_json(request, task_id):
 		dot_graph = nx_agraph.from_agraph(pygraphviz.AGraph(task.dot_rep))
   		graph_json = json.dumps(json_graph.node_link_data(dot_graph))
 		return HttpResponse(graph_json, content_type='application/json')
+
+def get_adjacency_matrix(request, task_id):
+	if request.method == 'GET':
+		task = Task.objects.get(id = task_id)
+		print dot_to_adjacency_matrix(pygraphviz.AGraph(task.dot_rep))
+		
 
 def get_task_metadata(request, task_id):
     if request.method == 'GET':

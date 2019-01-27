@@ -47,8 +47,6 @@
 
         var graticule = d3.geoGraticule();
 
-        config = { "projection": "Orthographic", "clip": false, "friction": .9, "linkStrength": 1, "linkDistance": 20, "charge": 60, "gravity": .1, "theta": .8 };
-
         projection = d3.geoOrthographic()
         .scale(height / $("#scale").val())
         .translate([(width / 2), height / 2])
@@ -149,7 +147,7 @@
     function print_adjacency_matrix() {
         $.ajax({
             dataType: "json",
-            type: "GET",
+            type: "POST",
             url: "{% url 'maps:get_adjacency_matrix' task.id %}",
             async: true,
             cache: false,
@@ -237,24 +235,29 @@ var color;
 
 // parse xdot for region info
 for (var i = 0; i < regions.length; i++) {
-    if (regions[i] == "c"){
+    if (regions[i] == "c"){ // following specifies color
         i += 2;
         var colorString = regions[i];
     
-        if (colorString.charAt(0) == '-') {
+        if (colorString.charAt(0) == '-') { // some color hex's have '-' before
             colorString = colorString.substring(1);
         }
-    } else if (regions[i] == "P") {
+
+    } else if (regions[i] == "P") { // following is a polygon
         i++;
-        var size = parseInt(regions[i]);
-        console.log(size);
-        var poly = [[[]]];
-        for (var j = size, k = 0; j > 0; j--, k++) {
-            var inverted = projectionEquidistant.invert([parseFloat(regions[i+2*j-1]), parseFloat(regions[i+2*j])])
-            poly[0][k] = [inverted[0], inverted[1]];
+        var size = parseInt(regions[i]); // number of points in polygon
+
+        var polygon = regions.slice(i + 1, i + 1 + size*2);
+
+        polygon = toCounterClockwise(polygon); // this many dimensions for GeoJson polygon coordinates
+
+        // place all points from 2D polygon onto sphere
+        for (var j = 0, k = 0; j < poly[0]; j+=2, k++) {
+            var pointOnSphere = projectionEquidistant.invert([parseFloat(polygon[j]), parseFloat(polygon[j+1])])
+            poly[0][k] = [pointOnSphere[0], pointOnSphere[1]];
         }
-        poly[0][k] = poly[0][0];
-        console.log(poly);
+        poly[0][k] = poly[0][0]; // GeoJson wants first point to be repeated at the end
+
         svg.append("path").attr("class", "fills")
         .style("fill", function (d) { return colorString; })
         .style("stroke", function (d) { return colorString; })
@@ -373,6 +376,29 @@ for (var i = 0; i < regions.length; i++) {
                     .attr('fill', 'black');
             }
         })
+    }
+
+    function toCounterClockwise(polygon) {
+        var sum = 0;
+
+        // loop through points and sum edges (x2-x1)(y2+y1)
+        for (var i = 0; i + 3 < polygon.length; i+=2) {
+            sum += (polygon[i+2] - polygon[i]) * (polygon[i+3] + polygon[i+1]);
+        }
+        
+        // polygon is counterclockwise else convert
+        if (sum < 0) {
+            return;
+        } else {
+            // flip array by pairs of points e.g. [x1, y1, x2, y2] -> [x2, y2, x1, y1]
+            var result = [];
+            for (var i = polygon.length - 2, j = 0; i >= 0; i-=2, j+=2) {
+                result[j] = polygon[i]; // x val
+                result[j+1] = polygon[i+1]; // y val
+            }
+        }
+
+        return result
     }
 
 </script>

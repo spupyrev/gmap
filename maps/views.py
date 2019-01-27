@@ -101,7 +101,7 @@ def get_json(request, task_id):
 		return HttpResponse(graph_json, content_type='application/json')
 
 def get_adjacency_matrix(request, task_id):
-	if request.method == 'GET':
+	if request.method == 'POST':
 		task = Task.objects.get(id = task_id)
 		print dot_to_adjacency_matrix(pygraphviz.AGraph(task.dot_rep))
 		

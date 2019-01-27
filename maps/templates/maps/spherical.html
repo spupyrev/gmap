@@ -81,7 +81,7 @@
         .on("drag", function () { svgGraticule.attr("d", path); var r = [d3.event.x / 2, -d3.event.y / 2, projection.rotate()[2]]; t0 = Date.now(); origin = r; projection.rotate(r); updateGraph(jsongraph); updateLabels();}));
     
         get_map(100);
-        print_adjacency_matrix();
+        //print_adjacency_matrix();
     });
 
     function get_map(delay) {
@@ -250,6 +250,8 @@ for (var i = 0; i < regions.length; i++) {
         var polygon = regions.slice(i + 1, i + 1 + size*2);
 
         polygon = toCounterClockwise(polygon); // this many dimensions for GeoJson polygon coordinates
+
+        var poly = [[[]]];
 
         // place all points from 2D polygon onto sphere
         for (var j = 0, k = 0; j < poly[0]; j+=2, k++) {

@@ -81,7 +81,7 @@ def display_map(request, task_id, format = ''):
 	if request.method == 'GET':
 		task = get_object_safe(task_id, 10)
 		if format == '':
-			if task.spherical:
+			if task.vis_type == 'spherical':
 				return render(request, 'maps/spherical.html', {'task': task})
 			return render(request, 'maps/map.html', {'task': task})
 		else:

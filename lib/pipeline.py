@@ -129,7 +129,7 @@ def call_graphviz_int(task):
 
     	svg_out = get_graphviz_map(dot_out, 'svg')
     	return dot_out, svg_out
-    elif vis_type == 'gmap':
+    elif vis_type == 'gmap' or vis_type == 'spherical':
     	#default pipeline
     	dot_out = run_layout(task, layout_algorithm, map_string)
     	dot_out = run_clustering(task, cluster_algorithm, dot_out)

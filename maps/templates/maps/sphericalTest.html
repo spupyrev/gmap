@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+{% block title %}{{ block.super }} :: map{% endblock %}
+
+{% block js %}
+{{ block.super }}
+{% load static %}
+<title>Spherical Force-Directed Layout</title>
+<script src="http://d3js.org/d3.v4.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5/dat.gui.min.js"></script>
+<script type="text/javascript" src="{% get_static_prefix %}js/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="{% get_static_prefix %}js/jquery-ui-1.10.3.custom.min.js"></script>
+
+<script src="{% get_static_prefix %}openlayers/OpenLayers-min.js"></script>
+<script src="{% get_static_prefix %}openlayers/InlineXhtml/lib/OpenLayers/Tile/InlineXhtml.js"></script>
+<script src="{% get_static_prefix %}openlayers/InlineXhtml/lib/OpenLayers/Layer/ScalableInlineXhtml.js"></script>
+
+<style type="text/css">
+    body {
+        padding: 0;
+        margin: 0;
+    }
+
+    .graticule {
+        fill: none;
+        stroke: #777;
+        stroke-width: .5px;
+        stroke-opacity: 1;
+    }
+
+    path.link {
+        stroke: #999;
+        fill-opacity: 0
+    }
+</style>
+
+<script type="text/javascript">
+
+    var config, width, height, node, link, borders, fills, projection, projectionEquidistant, path, svgGraticule, svg, jsongraph, chunk, MAXWIDTH = 16;
+
+    $(document).ready(function () {
+        width = window.innerWidth;
+        height = window.innerHeight;
+
+        svg = d3.select("body").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        var graticule = d3.geoGraticule();
+
+        projection = d3.geoOrthographic()
+            .scale(height / $("#scale").val())
+            .translate([(width / 2), height / 2])
+            .clipAngle(90);
+
+        $("#scale").on("input", function () {
+            chunk = height / $("#scale").attr("max");
+            projection.scale(height - chunk * $("#scale").val());
+
+            svg.selectAll("path.graticule")
+                .attr("d", path);
+
+            updateGraph(jsongraph);
+            updateLabels();
+        });
+
+        path = d3.geoPath()
+            .projection(projection);
+
+        svgGraticule = svg.append("path")
+            .datum(graticule)
+            .attr("class", "graticule")
+            .attr("d", path);
+
+        svg.call(d3.drag()
+            .subject(function () { var r = projection.rotate(); svgGraticule.attr("d", path); return { x: 2 * r[0], y: -2 * r[1] }; })
+            .on("drag", function () { svgGraticule.attr("d", path); var r = [d3.event.x / 2, -d3.event.y / 2, projection.rotate()[2]]; t0 = Date.now(); origin = r; projection.rotate(r); updateGraph(jsongraph); updateLabels(); }));
+
+        get_mds();
+    });
+
+    function get_mds() {
+        $.ajax({
+            dataType: "json",
+            type: "POST",
+            url: "{% url 'maps:get_mds'%}",
+            async: true,
+            cache: false,
+            timeout: 300000,
+            success: function (coords) {
+                console.log(coords)
+            },
+            // handle error
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+            },
+        });
+    }
+
+    function display_map_with_zoom(map_urls, width, height) {
+        var scale0 = Math.max(height / (window.innerHeight - 80), width / (window.innerWidth));
+        var S = 0.7;
+        var res = [scale0];
+        for (var i = 1; i < VIEW_ZOOM_LEVELS; i++)
+            res.push(res[i - 1] * S);
+
+        var bounds = new OpenLayers.Bounds(0, -1 * height, width, 0);
+        map_options = {
+            controls: [
+                new OpenLayers.Control.Navigation(),
+                new OpenLayers.Control.PanZoomBar(),
+            ],
+            //maxExtent: bounds,
+            //numZoomLevels: 5,
+            fractionalZoom: true,
+            resolutions: res,
+        }
+        map = new OpenLayers.Map("map", map_options);
+
+        var gmaps = new Array();
+        for (var i = 0; i < SVG_ZOOM_LEVELS; i++) {
+            var gmap = new OpenLayers.Layer.ScalableInlineXhtml(
+                "GMap",
+                map_urls[i],
+                bounds,
+                null,
+                { isBaseLayer: true, opacity: '1.0' });
+            gmap.adjustBounds(bounds);
+
+            gmaps.push(gmap);
+        }
+
+        var svg = $('svg');
+        map.addLayers(gmaps);
+        for (var i = 0; i < gmaps.length; i++)
+            gmaps[i].setVisibility(false);
+        map.zoomToExtent(bounds);
+
+        var curZoom = getZoomSafe(0, gmaps.length - 1, map.getZoom());
+        gmaps[curZoom].setVisibility(true);
+
+        map.events.register("zoomend", map, function () {
+            zoom = map.getZoom();
+            for (var i = 0; i < gmaps.length; i++)
+                gmaps[i].setVisibility(false);
+
+            zoom = getZoomSafe(0, gmaps.length - 1, map.getZoom());
+            gmaps[zoom].setVisibility(true);
+        });
+
+    }
+
+    function getZoomSafe(lower, upper, value) {
+        var zoom = value.toFixed();
+        zoom = Math.max(lower, zoom);
+        zoom = Math.min(upper, zoom);
+        return zoom;
+    }
+
+    /*document.getElementById("scale").oninput = function () {
+        projectionEquidistant.scale(height / (document.getElementById("scale").value));
+        force.restart();
+    }*/
+
+
+    function drawGraph(graph) {
+
+        drawRegions(graph);
+        
+        link = svg.selectAll("path.link")
+            .data(graph.links)
+            .enter().append("path").attr("class", "link")
+            .attr("stroke-width", function (d) { return 1; });
+
+        node = svg.selectAll("path.node")
+            .data(graph.nodes)
+            .enter().append("path").attr("class", "node")
+            .style("fill", function (d) { if (d.color != null) return d.color; return d.clustercolor; })
+            .style("stroke", function (d) { if (d.color != null) return d.color; return d.clustercolor; })
+            .style("stroke-width", function (d) { return Math.min(5 - $("#scale").val(), MAXWIDTH); })
+            .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Point", "coordinates": projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]) } }); return p ? p : 'M 0 0' })
+            .attr("x", function (d) { return projection(projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]))[0]; })
+            .attr("y", function (d) { return projection(projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]))[1] - 5; })
+            .attr("x1", function (d) { return projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])])[0]; })
+            .attr("y1", function (d) { return projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])])[1]; });
+
+        link.attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "LineString", "coordinates": [projectionEquidistant.invert([parseFloat(graph.nodes.find(obj => { return obj.id == d.source }).pos.split(',')[0]), parseFloat(graph.nodes.find(obj => { return obj.id == d.source }).pos.split(',')[1])]), projectionEquidistant.invert([parseFloat(graph.nodes.find(obj => { return obj.id == d.target }).pos.split(',')[0]), parseFloat(graph.nodes.find(obj => { return obj.id == d.target }).pos.split(',')[1])])] } }); return p ? p : 'M 0 0' });
+        updateLabels();
+
+        borders = svg.selectAll("path.borders");
+
+
+
+        /*svg.append("path").attr("class", "fills")
+                .style("fill", function (d) { return 0; })
+                .style("stroke", function (d) { return 0; })
+                .style("opacity", function(d) {return .25;})
+                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Polygon", "coordinates": [[projectionEquidistant.invert([0, 0]), projectionEquidistant.invert([100, 0]), projectionEquidistant.invert([100, 100]), projectionEquidistant.invert([0, 100]), projectionEquidistant.invert([0, 0])]] } }); console.log(projectionEquidistant.invert([0, 0])); console.log(projectionEquidistant.invert([0, 10])); console.log(projectionEquidistant.invert([10, 10])); console.log(projectionEquidistant.invert([10, 0])); return p;})
+        */
+    }
+
+    function updateGraph(graph) {
+        svg.selectAll("path.fills").remove();
+        drawRegions(graph);
+        node.each(function (d) {
+            d3.select(this)
+                .style("stroke-width", function (d) { return Math.min(5 - $("#scale").val(), MAXWIDTH); })
+                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Point", "coordinates": projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]) } }); return p ? p : 'M 0 0' })
+                .attr("x", function (d) { return projection(projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]))[0]; })
+                .attr("y", function (d) { return projection(projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]))[1] - 5; })
+                .attr("x1", function (d) { return projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])])[0]; })
+                .attr("y1", function (d) { return projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])])[1]; });
+        });
+
+        link.each(function (d) {
+            d3.select(this).attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "LineString", "coordinates": [projectionEquidistant.invert([parseFloat(graph.nodes.find(obj => { return obj.id == d.source }).pos.split(',')[0]), parseFloat(graph.nodes.find(obj => { return obj.id == d.source }).pos.split(',')[1])]), projectionEquidistant.invert([parseFloat(graph.nodes.find(obj => { return obj.id == d.target }).pos.split(',')[0]), parseFloat(graph.nodes.find(obj => { return obj.id == d.target }).pos.split(',')[1])])] } }); return p ? p : 'M 0 0' });
+        });
+
+    }
+
+    function drawRegions(graph) {
+        fills = svg.selectAll("path.fills");
+
+        var regions = graph.graph.graph._background.trim().split(/\s+/);
+        console.log(regions);
+        var color;
+
+        var polygons = [[]];
+        var polygonsIdx = 0;
+
+        var colors = [];
+        var colorIdx = 0;
+        // parse xdot for region info
+        for (var i = 0; i < regions.length; i++) {
+            if (regions[i] == "c") { // following specifies color
+                i += 2;
+                colors[colorIdx] = regions[i];
+
+                if (colors[colorIdx].charAt(0) == '-') { // some color hex's have '-' before
+                    colors[colorIdx] = colors[colorIdx].substring(1);
+                }
+                colorIdx++;
+
+            } else if (regions[i] == "P") { // following is a polygon
+                i++;
+                var size = parseInt(regions[i]); // number of points in polygon
+
+                var polygon = regions.slice(i + 1, i + 1 + size * 2);
+                console.log(polygon);
+
+                polygon = toClockwise(polygon); // this many dimensions for GeoJson polygon coordinates
+                polygons[polygonsIdx++] = polygon;
+            }
+        }
+        console.log(polygons);
+
+        /*var lons = [];
+        var lats = [];
+        
+        // create 1D array out of all polygons longs and lats in order to normalize entire set
+        for (var last = 0, i = 0; i < polygons.length; i++) {
+            for (var j = 0; j < polygons[i].length; j++) {
+                if (j % 2 == 0) {
+                    lons[last + (j / 2)] = parseFloat(polygons[i][j]);
+                } else {
+                    lats[last + ((j - 1) / 2)] = parseFloat(polygons[i][j]);
+                }
+            }
+            last += polygons[i].length / 2
+        }
+        var maxLon = Math.max.apply(null, lons);
+        var minLon = Math.min.apply(null, lons);
+        var maxLat = Math.max.apply(null, lats);
+        var minLat = Math.min.apply(null, lats);
+        
+        // normalize lists of lons and lats for all polygons
+        for (var i = 0; i < lons.length; i++) {
+            lons[i] = (lons[i] - minLon) / (maxLon - minLon) * (180 + 90) - 180; // longitude normalize formula
+            lats[i] = (lats[i] - minLat) / (maxLat - minLat) * (90 + 90) - 90; // latitude normalize formula
+        }
+        
+        // reconstruct polygons array with normalized values
+        for (var i = 0, last = 0; i < polygons.length; i++ ) {
+            for (var j = 0; j < polygons[i].length; j++) {
+                if (j % 2 == 0) {
+                    polygons[i][j] = lons[last + (j / 2)];
+                } else {
+                    polygons[i][j] = lats[last + ((j - 1) / 2)];
+                }
+            }
+            last += polygons[i].length / 2
+        }
+        */
+
+        for (var i = 0; i < polygons.length; i++) {
+            var poly = [[[]]];
+
+            // place all points from 2D polygon onto sphere
+            for (var j = 0, k = 0; j < polygons[i].length / 2; j += 2, k++) {
+                console.log(polygons[i][j], polygons[i][j + 1]);
+                var pointOnSphere = projectionEquidistant.invert([polygons[i][j], polygons[i][j + 1]]);
+                console.log(pointOnSphere);
+                poly[0][k] = [pointOnSphere[0], pointOnSphere[1]];
+            }
+            poly[0][k] = poly[0][0]; // GeoJson wants first point to be repeated at the end
+
+            svg.append("path").attr("class", "fills")
+                .style("fill", function (d) { return colors[i]; })
+                .style("stroke", function (d) { return colors[i]; })
+                .style("opacity", function (d) { return .4; })
+                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Polygon", "coordinates": poly } }); return p; })
+        }
+    }
+
+    function updateLabels() {
+        d3.selectAll("text").remove();
+        node.each(function (d) {
+            var temp = d3.select(this);
+
+            var distance = d3.geoDistance(
+                [temp.attr("x1"), temp.attr("y1")],
+                projection.invert([width / 2, height / 2]));
+
+            if (distance < 1.57079632679490) {
+                svg
+                    .append("svg:text")
+                    .text(function (e) {
+                        if (d.label != null)
+                            return d.label;
+                        return d.id;
+                    })
+                    .attr("x", function (e) {
+                        return temp.attr("x");
+                    })
+                    .attr("y", function (e) {
+                        return temp.attr("y");
+                    })
+                    .attr("text-anchor", "middle")
+                    .attr('fill', 'black');
+            }
+        })
+    }
+
+    function toCounterClockwise(polygon) {
+        var sum = 0;
+
+        // loop through points and sum edges (x2-x1)(y2+y1)
+        for (var i = 0; i + 3 < polygon.length; i += 2) {
+            sum += (polygon[i + 2] - polygon[i]) * (polygon[i + 3] + polygon[i + 1]);
+        }
+
+        // polygon is counterclockwise else convert
+        if (sum < 0) {
+            return;
+        } else {
+            // flip array by pairs of points e.g. [x1, y1, x2, y2] -> [x2, y2, x1, y1]
+            var result = [];
+            for (var i = polygon.length - 2, j = 0; i >= 0; i -= 2, j += 2) {
+                result[j] = polygon[i]; // x val
+                result[j + 1] = polygon[i + 1]; // y val
+            }
+        }
+
+        return result
+    }
+
+    function toClockwise(polygon) {
+        var sum = 0;
+
+        // loop through points and sum edges (x2-x1)(y2+y1)
+        for (var i = 0; i + 3 < polygon.length; i += 2) {
+            sum += (polygon[i + 2] - polygon[i]) * (polygon[i + 3] + polygon[i + 1]);
+        }
+
+        // polygon is counterclockwise else convert
+        if (sum >= 0) {
+            return;
+        } else {
+            // flip array by pairs of points e.g. [x1, y1, x2, y2] -> [x2, y2, x1, y1]
+            var result = [];
+            for (var i = polygon.length - 2, j = 0; i >= 0; i -= 2, j += 2) {
+                result[j] = polygon[i]; // x val
+                result[j + 1] = polygon[i + 1]; // y val
+            }
+        }
+
+        return result
+    }
+
+</script>
+{% endblock %}
+{% block content %}
+<input type="range" min="-100" max="100" value="2" class="slider" id="scale">
+{% endblock %}

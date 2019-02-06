@@ -7,7 +7,7 @@ def dot_to_adjacency_matrix(dotGraph):
     return nx.to_numpy_matrix(G, nodelist=G.nodes)
 
 def testMDS():
-    rows = 5
+    rows = 4
     cols = 2
     data = [0] * rows
     randos = [0] * rows
@@ -15,44 +15,34 @@ def testMDS():
         data[i] = [0] * cols
         randos[i] = [0] * cols
 
-    for i in range(5):
+    for i in range(4):
         data[i][0] = random.randint(0, 180)
         data[i][1] = random.randint(0, 360)
         randos[i][0] = data[i][0] - 90
         randos[i][1] = data[i][1] - 180
 
-    print(randos)
     adjMatrix = [0] * rows
     for i in range(rows):
         adjMatrix[i] = [0] * rows
 
     adjMatrix[0][0] = 0
     adjMatrix[0][1] = 1
-    adjMatrix[0][2] = 1
-    adjMatrix[0][3] = 1
-    adjMatrix[0][4] = 1
+    adjMatrix[0][2] = 2
+    adjMatrix[0][3] = 3
     adjMatrix[1][0] = 1
     adjMatrix[1][1] = 0
     adjMatrix[1][2] = 1
     adjMatrix[1][3] = 2
-    adjMatrix[1][4] = 1
-    adjMatrix[2][0] = 1
+    adjMatrix[2][0] = 2
     adjMatrix[2][1] = 1
     adjMatrix[2][2] = 0
     adjMatrix[2][3] = 1
-    adjMatrix[2][4] = 2
-    adjMatrix[3][0] = 1
+    adjMatrix[3][0] = 3
     adjMatrix[3][1] = 2
     adjMatrix[3][2] = 1
     adjMatrix[3][3] = 0
-    adjMatrix[3][4] = 1
-    adjMatrix[4][0] = 1
-    adjMatrix[4][1] = 1
-    adjMatrix[4][2] = 2
-    adjMatrix[4][3] = 1
-    adjMatrix[4][4] = 0
 
-    return gradientDescent(adjMatrix, data, 1000)
+    return gradientDescent(adjMatrix, data, 100)
 
 def gradientDescent(adjMatrix, data, iterations, learning_rate = 0.1):
     for i in range(0, iterations):

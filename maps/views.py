@@ -18,6 +18,9 @@ from lib.sphere_mds import testMDS
 def index(request):
 	return render(request, 'maps/index.html')
 
+def test(request):
+	return render(request, 'maps/sphericalTest.html')
+
 def description(request):
 	return render(request, 'description.html')
 
@@ -106,9 +109,8 @@ def get_adjacency_matrix(request, task_id):
 		task = Task.objects.get(id = task_id)
 		print dot_to_adjacency_matrix(pygraphviz.AGraph(task.dot_rep))
 
-def get_mds(request, task_id):
-	if request.method == 'POST':
-		return HttpResponse(json.dumps(testMDS()), content_type='application/json')
+def get_mds(request):
+	return HttpResponse(json.dumps(testMDS()), content_type='application/json')
 
 def get_task_metadata(request, task_id):
     if request.method == 'GET':

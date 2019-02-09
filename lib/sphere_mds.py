@@ -10,16 +10,12 @@ def testMDS():
     rows = 4
     cols = 2
     data = [0] * rows
-    randos = [0] * rows
     for i in range(rows):
         data[i] = [0] * cols
-        randos[i] = [0] * cols
 
     for i in range(4):
         data[i][0] = random.randint(0, 180)
         data[i][1] = random.randint(0, 360)
-        randos[i][0] = data[i][0] - 90
-        randos[i][1] = data[i][1] - 180
 
     adjMatrix = [0] * rows
     for i in range(rows):
@@ -42,20 +38,42 @@ def testMDS():
     adjMatrix[3][2] = 1
     adjMatrix[3][3] = 0
 
-    return gradientDescent(adjMatrix, data, 100)
+    return gradientDescent(adjMatrix, data)
 
-def gradientDescent(adjMatrix, data, iterations, learning_rate = 0.1):
-    for i in range(0, iterations):
-        difference = derivativeVector(adjMatrix, data)
+def gradientDescent(adjMatrix, data, learning_rate = 0.2):
+    mag = 1
+    iteration = 1
+
+    # iterate until threshold reached
+    while mag > 0.00005:
+        gradient = derivativeVector(adjMatrix, data)
+        mag = gradMag(gradient, data)
+        print("Iternation: " + str(iteration))
+        print("Gradient Magnitude: " + str(mag))
+        iteration += 1
         for j in range(len(data)):
             for k in range(len(data[j])):
-                data[j][k] -= difference[j][k] * learning_rate
+                data[j][k] -= gradient[j][k] * learning_rate
     
+    # convert into lat lon with domains [-90, 90], [-180, 180]
     for i in range(len(data)):
-        data[i][0] -= 90
-        data[i][1] -= 180
+        lat = data[i][0]
+        data[i][0] = data[i][1] - 180
+        data[i][1] = lat - 90
 
     return data
+
+# returns the magnitude of the gradient to know when gradient descent has found sufficient minimum
+def gradMag(gradient, data):
+    gradSum = 0
+    dataSum = 0
+    for i in range(len(gradient)):
+        for j in range(len(gradient[i])):
+            gradSum += gradient[i][j] ** 2
+            dataSum += data[i][j] ** 2
+    
+    return math.sqrt(gradSum) / math.sqrt(dataSum)
+        
 
 # Following implements derivatives from Cox, Cox (1991) paper
 def derivativeVector(adjMatrix, data):
@@ -135,7 +153,6 @@ if __name__ == '__main__':
     rows = 4
     cols = 2
     data = [0] * rows
-
     for i in range(rows):
         data[i] = [0] * cols
 
@@ -164,4 +181,4 @@ if __name__ == '__main__':
     adjMatrix[3][2] = 1
     adjMatrix[3][3] = 0
 
-    print(gradientDescent(adjMatrix, data, 100))
+    print(gradientDescent(adjMatrix, data))

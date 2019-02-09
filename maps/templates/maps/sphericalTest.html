@@ -108,11 +108,11 @@
             .data(graph)
             .enter().append("path").attr("class", "node")
             .style("stroke-width", function (d) { return Math.min(5 - $("#scale").val(), MAXWIDTH); })
-            .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Point", "coordinates": [d[1], d[0]] } }); return p ? p : 'M 0 0' })
-            .attr("x", function (d) { return projection([d[1], d[0]])[0]; })
-            .attr("y", function (d) { return projection([d[1], d[0]])[1]; })
-            .attr("x1", function (d) { return d[1] })
-            .attr("y1", function (d) { return d[0] });
+            .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Point", "coordinates": [d[0], d[1]] } }); return p ? p : 'M 0 0' })
+            .attr("x", function (d) { return projection([d[0], d[1]])[0]; })
+            .attr("y", function (d) { return projection([d[0], d[1]])[1]; })
+            .attr("x1", function (d) { return d[0] })
+            .attr("y1", function (d) { return d[1] });
         updateLabels();
     }
 
@@ -120,11 +120,11 @@
         node.each(function (d) {
             d3.select(this)
                 .style("stroke-width", function (d) { return Math.min(5 - $("#scale").val(), MAXWIDTH); })
-                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Point", "coordinates": [d[1], d[0]]} }); return p ? p : 'M 0 0' })
-                .attr("x", function (d) { return projection([d[1], d[0]])[0]; })
-                .attr("y", function (d) { return projection([d[1], d[0]])[1]; })
-                .attr("x1", function (d) { return d[1] })
-                .attr("y1", function (d) { return d[0] });
+                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Point", "coordinates": [d[0], d[1]]} }); return p ? p : 'M 0 0' })
+                .attr("x", function (d) { return projection([d[0], d[1]])[0]; })
+                .attr("y", function (d) { return projection([d[0], d[1]])[1]; })
+                .attr("x1", function (d) { return d[0] })
+                .attr("y1", function (d) { return d[1] });
         });
         updateLabels();
     }

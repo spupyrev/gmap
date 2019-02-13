@@ -1,6 +1,7 @@
 import random
 import math
 import numpy as np
+import copy
 
 def dot_to_adjacency_matrix(dotGraph):
     G = nx_agraph.from_agraph(dotGraph)
@@ -38,7 +39,6 @@ def testMDS():
     adjMatrix[3][2] = 1.0
     adjMatrix[3][3] = 0.0
 
-    print(adjMatrixToSortedTuple(adjMatrix))
     result = gradientDescent(adjMatrix, data)
     return result
 
@@ -62,27 +62,60 @@ def adjMatrixToSortedTuple(adjMatrix):
             j += 1
 
     temp = zip(tuples, distances)
-    print(temp)
     temp.sort(key=lambda tup: tup[0][0])
 
     # sort by dissimilarities between pairs of nodes
     return temp
 
-def gradientDescent(adjMatrix, data, learning_rate = 0.8):
+def gradientDescent(adjMatrix, data, learning_rate = 0.2):
     mag = 1.0
     iteration = 1.0
+    result = []
+    prevStress = stress(data,adjMatrix)
+    curStress = 5.0
+    lastGradient = []
 
     # iterate until threshold reached
-    while mag > 0.00005 or iteration > 50000:
+    while mag > 0.00005 and iteration < 10000.0:
         gradient = derivativeVector(adjMatrix, data)
-        #print(gradient)
+        
+        if (iteration == 1):
+            lastGradient = gradient
+
         mag = gradMag(gradient, data)
-        #print("Iternation: " + str(iteration))
-        #print("Gradient Magnitude: " + str(mag))
+        print("Iternation: " + str(iteration))
+        print("Gradient Magnitude: " + str(mag))
         iteration += 1
+        fiveStressAgo = 1.0
+        
+        if (iteration % 5 == 0):
+            fiveStressAgo = stress(data, adjMatrix)
+
+        # each point
         for j in range(len(data)):
+            # each dimension
             for k in range(len(data[j])):
-                data[j][k] -= gradient[j][k] * learning_rate
+                # update data with gradient elementwise
+                data[j][k] -= gradient[j][k] * learning_rate / mag
+        
+        # create list of configurations in lon, lat form to display process
+        copied = copy.deepcopy(data)
+        for i in range(len(data)):
+            lat = copied[i][0]
+            copied[i][0] = copied[i][1] - 180
+            copied[i][1] = lat - 90
+        result.append(copied)
+        
+        # decrease learning rate
+        curStress = stress(data, adjMatrix)
+        learning_rate = learning_rate * (4.0 ** (cosineSimilarity(lastGradient, gradient) ** 3.0)) * min(1, curStress/prevStress) * 1.3 / (1 + min(1, curStress/fiveStressAgo) ** 5.0)
+        prevStress = curStress
+
+        print("Cosine: " + str(4.0 ** (cosineSimilarity(lastGradient, gradient) ** 3.0)))
+        print("Cur/Prev: " + str(min(1, curStress/prevStress)))
+        print("Cur/5Ago: " + str(1.3 / (1 + min(1, curStress/fiveStressAgo) ** 5.0)))
+        print("Learning Rate: " + str(learning_rate))
+        print("Stress: " + str(curStress))
     
     # convert into lat lon with domains [-90, 90], [-180, 180]
     for i in range(len(data)):
@@ -90,7 +123,21 @@ def gradientDescent(adjMatrix, data, learning_rate = 0.8):
         data[i][0] = data[i][1] - 180
         data[i][1] = lat - 90
 
-    return data
+    return result
+
+def cosineSimilarity(gradient1, gradient2):
+    g1g2sum = 0.0
+    g1sum = 0.0
+    g2sum = 0.0
+
+    for i in range(len(gradient1)):
+        for j in range(len(gradient1[i])):
+            g1g2sum += gradient1[i][j] * gradient2[i][j]
+            g1sum += gradient1[i][j] ** 2
+            g2sum += gradient2[i][j] ** 2
+    
+    return g1g2sum / math.sqrt(g1sum) * math.sqrt(g2sum)
+
 
 # returns the magnitude of the gradient to know when gradient descent has found sufficient minimum
 def gradMag(gradient, data):
@@ -177,6 +224,15 @@ def S(data, adjMatrix):
 # i[0] = theta_i1, i[1] = theta_i2
 def d(i, j):
     return math.sqrt(2.0 - 2.0 * math.sin(math.radians(i[1])) * math.sin(math.radians(j[1])) * math.cos(math.radians(i[0]) - math.radians(j[0])) - 2.0 * math.cos(math.radians(i[1])) * math.cos(math.radians(j[1])))
+
+def stress(data, adjMatrix):
+    sum = 0.0
+    for i in range(len(data)):
+        for j in range(len(data)):
+            if (i < j):
+                sum += (d(data[i], data[j]) - adjMatrix[i][j]) ** 2
+
+    return sum
 
 if __name__ == '__main__':
     rows = 4

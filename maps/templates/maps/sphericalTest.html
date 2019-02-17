@@ -115,10 +115,14 @@
             .attr("y1", function (d) { return d[1] });
         updateLabels();
         
+        await sleep(5000)
+
         for (var i = 1; i < graph.length; i++){
             await sleep(500);
             drawGraphPiece(graph[i]);
         }
+        await sleep(5000);
+        drawGraph(graph);
     }
 
     async function drawGraphPiece(graph) {

@@ -14,9 +14,18 @@ def testMDS():
     for i in range(rows):
         data[i] = [0] * cols
 
-    for i in range(4):
-        data[i][0] = random.random() * 180
-        data[i][1] = random.random() * 360
+    #for i in range(4):
+    #    data[i][0] = random.random() * 180
+    #    data[i][1] = random.random() * 360
+
+    data[0][0] = 90.0
+    data[0][1] = 90.0
+    data[1][0] = 110.0
+    data[1][1] = 150.0
+    data[2][0] = 90.0
+    data[2][1] = 210.0
+    data[3][0] = 90.0
+    data[3][1] = 270.0
 
     adjMatrix = [0] * rows
     for i in range(rows):
@@ -24,18 +33,18 @@ def testMDS():
 
     adjMatrix[0][0] = 0.0
     adjMatrix[0][1] = 1.0
-    adjMatrix[0][2] = 2.0
-    adjMatrix[0][3] = 3.0
+    adjMatrix[0][2] = math.sqrt(3)
+    adjMatrix[0][3] = 2.0
     adjMatrix[1][0] = 1.0
     adjMatrix[1][1] = 0.0
     adjMatrix[1][2] = 1.0
-    adjMatrix[1][3] = 2.0
-    adjMatrix[2][0] = 2.0
+    adjMatrix[1][3] = math.sqrt(3)
+    adjMatrix[2][0] = math.sqrt(3)
     adjMatrix[2][1] = 1.0
     adjMatrix[2][2] = 0.0
     adjMatrix[2][3] = 1.0
-    adjMatrix[3][0] = 3.0
-    adjMatrix[3][1] = 2.0
+    adjMatrix[3][0] = 2.0
+    adjMatrix[3][1] = math.sqrt(3)
     adjMatrix[3][2] = 1.0
     adjMatrix[3][3] = 0.0
 
@@ -67,16 +76,16 @@ def adjMatrixToSortedTuple(adjMatrix):
     # sort by dissimilarities between pairs of nodes
     return temp
 
-def gradientDescent(adjMatrix, data, learning_rate = 0.2):
+def gradientDescent(adjMatrix, data, learning_rate = 0.1):
     mag = 1.0
     iteration = 1.0
     result = []
     prevStress = stress(data,adjMatrix)
-    curStress = 5.0
+    curStress = stress(data,adjMatrix)
     lastGradient = []
 
     # iterate until threshold reached
-    while mag > 0.00005 and iteration < 10000.0:
+    while curStress > 0 and iteration < 200.0:
         gradient = derivativeVector(adjMatrix, data)
         
         if (iteration == 1):
@@ -85,11 +94,20 @@ def gradientDescent(adjMatrix, data, learning_rate = 0.2):
         mag = gradMag(gradient, data)
         print("Iternation: " + str(iteration))
         print("Gradient Magnitude: " + str(mag))
+        print("Gradient: " + str(gradient))
         iteration += 1
         fiveStressAgo = 1.0
         
         if (iteration % 5 == 0):
             fiveStressAgo = stress(data, adjMatrix)
+
+        # create list of configurations in lon, lat form to display process
+        copied = copy.deepcopy(data)
+        for i in range(len(data)):
+            lat = copied[i][0]
+            copied[i][0] = copied[i][1] - 180
+            copied[i][1] = lat - 90
+        result.append(copied)
 
         # each point
         for j in range(len(data)):
@@ -98,24 +116,26 @@ def gradientDescent(adjMatrix, data, learning_rate = 0.2):
                 # update data with gradient elementwise
                 data[j][k] -= gradient[j][k] * learning_rate / mag
         
-        # create list of configurations in lon, lat form to display process
-        copied = copy.deepcopy(data)
-        for i in range(len(data)):
-            lat = copied[i][0]
-            copied[i][0] = copied[i][1] - 180
-            copied[i][1] = lat - 90
-        result.append(copied)
-        
         # decrease learning rate
         curStress = stress(data, adjMatrix)
-        learning_rate = learning_rate * (4.0 ** (cosineSimilarity(lastGradient, gradient) ** 3.0)) * min(1, curStress/prevStress) * 1.3 / (1 + min(1, curStress/fiveStressAgo) ** 5.0)
+        #learning_rate = learning_rate * (4.0 ** (cosineSimilarity(lastGradient, gradient) ** 3.0)) * min(1, curStress/prevStress) * 1.3 / (1 + min(1, curStress/fiveStressAgo) ** 5.0)
+        learning_rate = learning_rate * min(1, curStress/prevStress)
         prevStress = curStress
 
-        print("Cosine: " + str(4.0 ** (cosineSimilarity(lastGradient, gradient) ** 3.0)))
-        print("Cur/Prev: " + str(min(1, curStress/prevStress)))
-        print("Cur/5Ago: " + str(1.3 / (1 + min(1, curStress/fiveStressAgo) ** 5.0)))
+        #print("Cosine: " + str(4.0 ** (cosineSimilarity(lastGradient, gradient) ** 3.0)))
+        #print("Cur/Prev: " + str(min(1, curStress/prevStress)))
+        #print("Cur/5Ago: " + str(1.3 / (1 + min(1, curStress/fiveStressAgo) ** 5.0)))
         print("Learning Rate: " + str(learning_rate))
         print("Stress: " + str(curStress))
+        print("data: " + str(data))
+        print("D01: " + str(d(data[0], data[1])))
+        print("D02: " + str(d(data[0], data[2])))
+        print("D03: " + str(d(data[0], data[3])))
+        print("D12: " + str(d(data[1], data[2])))
+        print("D13: " + str(d(data[1], data[3])))
+        print("D23: " + str(d(data[2], data[3])))
+
+
     
     # convert into lat lon with domains [-90, 90], [-180, 180]
     for i in range(len(data)):
@@ -164,9 +184,9 @@ def derivativeVector(adjMatrix, data):
         j = 0
         for theta in point: 
             if j == 0:
-                result[i][j] = derivative = 1.0 / 2.0 * math.sqrt(T(data)/S(data, adjMatrix)) * (T(data) ** (-1.0) * derivS1(data, adjMatrix, point, i) - S(data, adjMatrix) * T(data) ** (-2.0) * derivT1(data, point))
+                result[i][j] = 1.0 / 2.0 * math.sqrt(T(data)/S(data, adjMatrix)) * (T(data) ** (-1.0) * derivS1(data, adjMatrix, point, i) - S(data, adjMatrix) * T(data) ** (-2.0) * derivT1(data, point))
             else:
-                result[i][j] = derivative = 1.0 / 2.0 * math.sqrt(T(data)/S(data, adjMatrix)) * (T(data) ** (-1.0) * derivS2(data, adjMatrix, point, i) - S(data, adjMatrix) * T(data) ** (-2.0) * derivT2(data, point))
+                result[i][j] = 1.0 / 2.0 * math.sqrt(T(data)/S(data, adjMatrix)) * (T(data) ** (-1.0) * derivS2(data, adjMatrix, point, i) - S(data, adjMatrix) * T(data) ** (-2.0) * derivT2(data, point))
             j = j + 1
         i = i + 1
 
@@ -241,9 +261,19 @@ if __name__ == '__main__':
     for i in range(rows):
         data[i] = [0] * cols
 
-    for i in range(4):
-        data[i][0] = random.random() * 180
-        data[i][1] = random.random() * 360
+    #for i in range(4):
+    #    data[i][0] = random.random() * 180
+    #    data[i][1] = random.random() * 360
+
+    data[0][0] = 90.0
+    data[0][1] = 40.0
+    data[1][0] = 110.0
+    data[1][1] = 80.0
+    data[2][0] = 90.0
+    data[2][1] = 120.0
+    data[3][0] = 90.0
+    data[3][1] = 160.0
+
 
     adjMatrix = [0] * rows
     for i in range(rows):

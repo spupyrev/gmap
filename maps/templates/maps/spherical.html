@@ -29,7 +29,12 @@
 
     path.link {
         stroke: #999;
-        fill-opacity: 0
+        fill-opacity: 0;
+    }
+
+    path.border {
+        stroke: #000000;
+        fill-opacity: 0;
     }
 </style>
 
@@ -53,7 +58,7 @@
             .clipAngle(90);
 
         projectionEquidistant = d3.geoEquirectangular()
-            //.scale(height / 2)
+            .scale(height/1.7)
             .translate([(width / 2), height / 2]);
 
         $("#scale").on("input", function () {
@@ -64,7 +69,7 @@
             svg.selectAll("path.graticule")
                 .attr("d", path);
 
-            updateGraph(jsongraph);
+            drawGraph(jsongraph);
             updateLabels();
         });
 
@@ -77,8 +82,17 @@
             .attr("d", path);
 
         svg.call(d3.drag()
-            .subject(function () { var r = projection.rotate(); svgGraticule.attr("d", path); return { x: 2 * r[0], y: -2 * r[1] }; })
-            .on("drag", function () { svgGraticule.attr("d", path); var r = [d3.event.x / 2, -d3.event.y / 2, projection.rotate()[2]]; t0 = Date.now(); origin = r; projection.rotate(r); updateGraph(jsongraph); updateLabels(); }));
+            .subject(function () { 
+                var r = projection.rotate(); 
+                svgGraticule.attr("d", path); 
+                return { x: 2 * r[0], y: -2 * r[1] }; })
+            .on("drag", function () { 
+                svgGraticule.attr("d", path); 
+                var r = [d3.event.x / 2, -d3.event.y / 2, projection.rotate()[2]]; 
+                projection.rotate(r); 
+                drawGraph(jsongraph); 
+                updateLabels(); 
+        }));
 
         get_map(100);
         //print_adjacency_matrix();
@@ -227,9 +241,12 @@
 
 
     function drawGraph(graph) {
-
+        svg.selectAll("path.fills").remove();
+        svg.selectAll("path.link").remove();
+        svg.selectAll("path.node").remove();
+        svg.selectAll("path.border").remove();
         drawRegions(graph);
-        
+
         link = svg.selectAll("path.link")
             .data(graph.links)
             .enter().append("path").attr("class", "link")
@@ -251,41 +268,12 @@
         updateLabels();
 
         borders = svg.selectAll("path.borders");
-
-
-
-        /*svg.append("path").attr("class", "fills")
-                .style("fill", function (d) { return 0; })
-                .style("stroke", function (d) { return 0; })
-                .style("opacity", function(d) {return .25;})
-                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Polygon", "coordinates": [[projectionEquidistant.invert([0, 0]), projectionEquidistant.invert([100, 0]), projectionEquidistant.invert([100, 100]), projectionEquidistant.invert([0, 100]), projectionEquidistant.invert([0, 0])]] } }); console.log(projectionEquidistant.invert([0, 0])); console.log(projectionEquidistant.invert([0, 10])); console.log(projectionEquidistant.invert([10, 10])); console.log(projectionEquidistant.invert([10, 0])); return p;})
-        */
-    }
-
-    function updateGraph(graph) {
-        svg.selectAll("path.fills").remove();
-        drawRegions(graph);
-        node.each(function (d) {
-            d3.select(this)
-                .style("stroke-width", function (d) { return Math.min(5 - $("#scale").val(), MAXWIDTH); })
-                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Point", "coordinates": projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]) } }); return p ? p : 'M 0 0' })
-                .attr("x", function (d) { return projection(projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]))[0]; })
-                .attr("y", function (d) { return projection(projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]))[1] - 5; })
-                .attr("x1", function (d) { return projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])])[0]; })
-                .attr("y1", function (d) { return projectionEquidistant.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])])[1]; });
-        });
-
-        link.each(function (d) {
-            d3.select(this).attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "LineString", "coordinates": [projectionEquidistant.invert([parseFloat(graph.nodes.find(obj => { return obj.id == d.source }).pos.split(',')[0]), parseFloat(graph.nodes.find(obj => { return obj.id == d.source }).pos.split(',')[1])]), projectionEquidistant.invert([parseFloat(graph.nodes.find(obj => { return obj.id == d.target }).pos.split(',')[0]), parseFloat(graph.nodes.find(obj => { return obj.id == d.target }).pos.split(',')[1])])] } }); return p ? p : 'M 0 0' });
-        });
-
     }
 
     function drawRegions(graph) {
         fills = svg.selectAll("path.fills");
 
         var regions = graph.graph.graph._background.trim().split(/\s+/);
-        console.log(regions);
         var color;
 
         var polygons = [[]];
@@ -293,6 +281,9 @@
 
         var colors = [];
         var colorIdx = 0;
+
+        var lines = [[]];
+        var lineIdx = 0;
         // parse xdot for region info
         for (var i = 0; i < regions.length; i++) {
             if (regions[i] == "c") { // following specifies color
@@ -309,14 +300,17 @@
                 var size = parseInt(regions[i]); // number of points in polygon
 
                 var polygon = regions.slice(i + 1, i + 1 + size * 2);
-                console.log(polygon);
 
-                polygon = toClockwise(polygon); // this many dimensions for GeoJson polygon coordinates
+                polygon = toCounterClockwise(polygon); // this many dimensions for GeoJson polygon coordinates
                 polygons[polygonsIdx++] = polygon;
+            } else if (regions[i] == "L") { // following is a line border of the polygon
+                i++;
+                var size = parseInt(regions[i]);
+
+                var line = regions.slice(i + 1, i + 1 + size * 2);
+                lines[lineIdx++] = line;
             }
         }
-        console.log(polygons);
-
         /*var lons = [];
         var lats = [];
         
@@ -357,21 +351,34 @@
 
         for (var i = 0; i < polygons.length; i++) {
             var poly = [[[]]];
+            var line = [[]];
 
             // place all points from 2D polygon onto sphere
-            for (var j = 0, k = 0; j < polygons[i].length / 2; j += 2, k++) {
-                console.log(polygons[i][j], polygons[i][j + 1]);
+            for (var j = 0, k = 0; j < polygons[i].length; j += 2, k++) {
+                // polygons[i][j] = each point's start
                 var pointOnSphere = projectionEquidistant.invert([polygons[i][j], polygons[i][j + 1]]);
-                console.log(pointOnSphere);
                 poly[0][k] = [pointOnSphere[0], pointOnSphere[1]];
             }
-            poly[0][k] = poly[0][0]; // GeoJson wants first point to be repeated at the end
+            //poly[0] = toCounterClockwise(poly[0]);
+
+            // place all borders from 2D polygons onto sphere
+            for (var j = 0, k = 0; j < lines[i].length; j += 2, k++) {
+                // polygons[i][j] = each point's start
+                var pointOnSphere = projectionEquidistant.invert([lines[i][j], lines[i][j + 1]]);
+                line[k] = [pointOnSphere[0], pointOnSphere[1]];
+            }
 
             svg.append("path").attr("class", "fills")
                 .style("fill", function (d) { return colors[i]; })
                 .style("stroke", function (d) { return colors[i]; })
                 .style("opacity", function (d) { return .4; })
                 .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Polygon", "coordinates": poly } }); return p; })
+        
+            svg.append("path").attr("class", "border")
+                .style("stroke", function (d) { return 0; })
+                .style("opacity", function (d) { return .4; })
+                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "LineString", "coordinates": line } }); return p; })
+        
         }
     }
 
@@ -409,12 +416,11 @@
 
         // loop through points and sum edges (x2-x1)(y2+y1)
         for (var i = 0; i + 3 < polygon.length; i += 2) {
-            sum += (polygon[i + 2] - polygon[i]) * (polygon[i + 3] + polygon[i + 1]);
+            sum += (parseFloat(polygon[i + 2]) - parseFloat(polygon[i])) * (parseFloat(polygon[i + 3]) + parseFloat(polygon[i + 1]));
         }
-
         // polygon is counterclockwise else convert
         if (sum < 0) {
-            return;
+            return polygon;
         } else {
             // flip array by pairs of points e.g. [x1, y1, x2, y2] -> [x2, y2, x1, y1]
             var result = [];
@@ -432,12 +438,12 @@
 
         // loop through points and sum edges (x2-x1)(y2+y1)
         for (var i = 0; i + 3 < polygon.length; i += 2) {
-            sum += (polygon[i + 2] - polygon[i]) * (polygon[i + 3] + polygon[i + 1]);
+            sum += (parseFloat(polygon[i + 2]) - parseFloat(polygon[i])) * (parseFloat(polygon[i + 3]) + parseFloat(polygon[i + 1]));
         }
 
         // polygon is counterclockwise else convert
         if (sum >= 0) {
-            return;
+            return polygon;
         } else {
             // flip array by pairs of points e.g. [x1, y1, x2, y2] -> [x2, y2, x1, y1]
             var result = [];

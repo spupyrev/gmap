@@ -14,10 +14,6 @@ def testMDS():
     for i in range(rows):
         data[i] = [0] * cols
 
-    #for i in range(4):
-    #    data[i][0] = random.random() * 180
-    #    data[i][1] = random.random() * 360
-
     data[0][0] = 90.0
     data[0][1] = 90.0
     data[1][0] = 110.0
@@ -50,7 +46,7 @@ def testMDS():
 
     result = gradientDescent(adjMatrix, data)
     return result
-
+    
 # create sorted list of dissimilarities between node pairs and their indices
 def adjMatrixToSortedTuple(adjMatrix):
     tuples = []
@@ -76,7 +72,7 @@ def adjMatrixToSortedTuple(adjMatrix):
     # sort by dissimilarities between pairs of nodes
     return temp
 
-def gradientDescent(adjMatrix, data, learning_rate = 0.1):
+def gradientDescent(adjMatrix, data, learning_rate = 0.02):
     mag = 1.0
     iteration = 1.0
     result = []
@@ -87,6 +83,7 @@ def gradientDescent(adjMatrix, data, learning_rate = 0.1):
     # iterate until threshold reached
     while curStress > 0 and iteration < 200.0:
         gradient = derivativeVector(adjMatrix, data)
+        # gradient = derivativeVector2(adjMatrix, data)
         
         if (iteration == 1):
             lastGradient = gradient

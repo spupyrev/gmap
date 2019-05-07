@@ -44,7 +44,7 @@
 
 <script type="text/javascript">
 
-    var parsed = true, opacity = 100, graticule, width, height, node, link, borders, fills, projection, inverseProjection, path, svgGraticule, svg, jsongraph, chunk, MINWIDTH = 0, MAXWIDTH = 16, MINFONT = 10, MAXFONT = 16, fontsize;
+    var parsed = true, opacity = 100, visType, graticule, width, height, node, link, borders, fills, projection, inverseProjection, path, svgGraticule, svg, jsongraph, chunk, MINWIDTH = 0, MAXWIDTH = 16, MINFONT = 10, MAXFONT = 16, fontsize;
     var polygons = [[]];
     var colors = [];
     var lines = [[]];
@@ -61,15 +61,18 @@
 
         graticule = d3.geoGraticule();
 
+        // projects points from sphere to plane
         projection = d3.geoOrthographic()
             .scale(height + (chunk * $("#scale").val()))
             .translate([(width / 2), height / 2])
             .clipAngle(90);
 
+        // takes points from plane to sphere
         inverseProjection = d3.geoEquirectangular()
             .translate([(width / 2), height / 2])
             .scale(height / parseFloat($("#inverseScale").val()));
 
+        // when coverage slider changes, alter the scale and redraw
         $("#inverseScale").on("input", function () {
             inverseProjection.scale(height / parseFloat($("#inverseScale").val()));
 
@@ -80,6 +83,7 @@
             updateLabels();
         });
 
+        // when zoom slider changes
         $("#scale").on("input", function () {
             projection.scale(height + (chunk * $("#scale").val()));
 
@@ -90,9 +94,9 @@
             updateLabels();
         });
 
+        // when edge opacity changes
         $("#opacity").on("input", function () {
             opacity = parseFloat($("#opacity").val());
-            console.log(opacity);
             drawGraph(jsongraph);
             updateLabels();
         });
@@ -104,9 +108,11 @@
         document.getElementById("inverseScale").style.visibility = "hidden";
         document.getElementById("inverseScaleLabel").style.visibility = "hidden";
 
+        // set up drawing object
         path = d3.geoPath()
             .projection(projection);
 
+        // on rotation of sphere
         svg.call(d3.drag()
             .subject(function () {
                 var r = projection.rotate();
@@ -134,6 +140,8 @@
             timeout: 300000,
             success: function (task) {
                 if (task.status == 'completed') {
+                    visType = task.vis_type;
+                    $('#status_indicator').hide();
                     display_map("{% url 'maps:get_json' task.id %}", task.width, task.height);
                 }
                 else {
@@ -192,6 +200,8 @@
         svg.selectAll("path.link").remove();
         svg.selectAll("path.node").remove();
         svg.selectAll("path.border").remove();
+
+        if (typeof graph.graph.graph._background != "undefined")
         drawRegions(graph);
 
         link = svg.selectAll("path.link")
@@ -256,9 +266,6 @@
         fills = svg.selectAll("path.fills");
 
         var regions;
-        var boundingBox = graph.graph.graph.bb.split(",");
-        var graphWidth = parseFloat(boundingBox[2]) - parseFloat(boundingBox[0]);
-        var graphHeight = parseFloat(boundingBox[3]) - parseFloat(boundingBox[1]);
 
         var color;
         var polygonsIdx = 0;
@@ -283,11 +290,6 @@
                     var size = parseInt(regions[i]); // number of points in polygon
 
                     var polygon = regions.slice(i + 1, i + 1 + size * 2);
-
-                    for(var j = 0, k = 1; j < polygon.length - 1; j+=2, k+=2){
-                        polygon[j] += boundingBox[0];
-                        polygon[k] += boundingBox[1];
-                    }
 
                     polygon = toCounterClockwise(polygon); // this many dimensions for GeoJson polygon coordinates
                     polygons[polygonsIdx++] = polygon;

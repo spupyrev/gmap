@@ -2,10 +2,15 @@ import random
 import math
 import numpy as np
 import copy
+import networkx as nx
 
 def dot_to_adjacency_matrix(dotGraph):
     G = nx_agraph.from_agraph(dotGraph)
     return nx.to_numpy_matrix(G, nodelist=G.nodes)
+
+def dot_to_apsp(dotGraph):
+    G = nx_agraph.from_agraph(dotGraph)
+    return nx.algorithms.shortest_paths.unweighted.all_pairs_shortest_path(G)
 
 def testMDS():
     rows = 4

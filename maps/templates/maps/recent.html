@@ -14,9 +14,10 @@
 				<tr>
 					<td width="8%" align="center"><b>id</b></td>
 					<td width="{% if debug = 'true' %}19%{% else %}30%{% endif %}" align="center"><b>creation date</b></td>
-					<td width="{% if debug = 'true' %}57%{% else %}60%{% endif %}" align="center"><b>source</b></td>
+					<td width="{% if debug = 'true' %}49%{% else %}60%{% endif %}" align="center"><b>source</b></td>
 					{% if debug = 'true' %}<td width="8%" align="center"><b>ip</b></td>{% endif %}
 					{% if debug = 'true' %}<td width="8%" align="center"><b>status</b></td>{% endif %}
+					{% if debug = 'true' %}<td width="8%" align="center"><b>delete</b></td>{% endif %}
 				</tr>
 
 				{% for obj in map_list %}
@@ -26,6 +27,7 @@
 					<td align="left"><a href="{{obj.dot_link}}">{{ obj.dot }}</a></td>
 					{% if debug = 'true' %}<td align="center">{{ obj.ip }}{% endif %}
 					{% if debug = 'true' %}<td align="center"><a href="{{obj.status_link}}">{{ obj.status }}</a>{% endif %}
+					{% if debug = 'true' %}<td align="center"><a href="{{obj.delete_link}}">del {{ obj.id }}</a>{% endif %}
 			    </tr>
 				{% endfor %}
 

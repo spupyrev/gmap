@@ -90,6 +90,9 @@ def run_layout(task, layout_algorithm, map_string):
 def run_clustering(task, cluster_algorithm, dot_out):
 	if cluster_algorithm == 'graph':
 		return dot_out
+	if cluster_algorithm == 'cont-graph':
+		set_status(task, 'making map contiguous')
+		return call_process(ceba_command(), dot_out)
 
 	set_status(task, 'running clustering')
 	if cluster_algorithm == 'k-means':
@@ -117,6 +120,7 @@ def run_color_assignment(task, dot_out):
 	set_status(task, 'assigning colors')
 	return call_process(colors_command(), dot_out)
 
+import time
 def call_graphviz_int(task):
     map_string = task.input_dot
     vis_type = task.vis_type
@@ -134,11 +138,15 @@ def call_graphviz_int(task):
     	dot_out = run_layout(task, layout_algorithm, map_string)
     	dot_out = run_clustering(task, cluster_algorithm, dot_out)
 
+    	start = time.time()
     	set_status(task, 'map construction')
     	dot_out = call_process(graphviz_command_gmap(task.color_scheme), dot_out)
     	#log.debug('Input: %s' %(dot_out))
     	if task.color_scheme == 'bubble-sets':
     		dot_out = run_color_assignment(task, dot_out)
+
+    	end = time.time()
+    	print ('running time: ' + str(end-start))
 
     	svg_out = get_graphviz_map(dot_out, 'svg')
     	return dot_out, svg_out

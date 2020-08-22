@@ -13,4 +13,5 @@ urlpatterns = patterns('',
     url(r'^get_map_zoomed/(\d*)$', views.get_map_zoomed, name='get_map_zoomed'),
     url(r'^get_task_metadata/(\d*)/$', views.get_task_metadata, name='get_task_metadata'),
     url(r'^request_map/$', views.request_map, name='request_map'),
+    url(r'^delete_map/(\d*)/$', views.delete_map, name='delete_map'),
 )

@@ -42,6 +42,7 @@ def recent(request):
 		obj['ip'] = task.creation_ip
 		obj['status'] = task.status
 		obj['status_link'] = '/map/' + str(task.id) + '/input_desc'
+		obj['delete_link'] = '/delete_map/' + str(task.id)
 		map_list.append(obj)
 	return render(request, 'maps/recent.html', {'map_list': map_list, 'debug': debug})
 
@@ -86,12 +87,12 @@ def display_map(request, task_id, format = ''):
 				return HttpResponse(task.description(), 'text/plain')
 
 def get_task_metadata(request, task_id):
-    if request.method == 'GET':
+	if request.method == 'GET':
 		task = Task.objects.get(id = task_id)
 		return HttpResponse(task.json_metadata(), content_type='application/json')
     
 def get_map(request, task_id):
-    if request.method == 'GET':
+	if request.method == 'GET':
 		task = Task.objects.get(id = task_id)
 		return HttpResponse(u'%s' % task.svg_rep)
 
@@ -124,4 +125,11 @@ def get_object_safe(task_id, attempt):
 		print type(e).__name__ + ': ' + str(e)
 		time.sleep(0.1)
 		return get_object_safe(task_id, attempt - 1)
-            
+
+def delete_map(request, task_id):
+	if request.method == 'GET':
+		task = Task.objects.get(id = task_id)
+		task.delete();
+		return recent(request)
+
+        

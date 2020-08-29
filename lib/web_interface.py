@@ -19,7 +19,7 @@ def create_task(task_parameters, user_ip):
 	task.vis_type = task_parameters['vis_type']
 	task.layout_algorithm = task_parameters['layout_algorithm']
 	task.cluster_algorithm = task_parameters['cluster_algorithm']
-	task.contiguous_algorithm = 'contiguous_algorithm'
+	task.contiguous_algorithm = task_parameters.get('spherical', 'false')
 	task.color_scheme = task_parameters['color_scheme']
 	task.semantic_zoom = task_parameters.get('semantic_zoom', 'false')
 	task.status = 'created'

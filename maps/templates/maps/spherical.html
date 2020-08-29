@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+{% block title %}{{ block.super }} :: map{% endblock %}
+
+{% block js %}
+{{ block.super }}
+{% load static %}
+<title>Spherical Force-Directed Layout</title>
+<script src="{% get_static_prefix %}js/d3.min.js"></script>
+
+<script type="text/javascript" src="{% get_static_prefix %}js/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="{% get_static_prefix %}js/jquery-ui-1.10.3.custom.min.js"></script>
+
+<script src="{% get_static_prefix %}openlayers/OpenLayers-min.js"></script>
+<script src="{% get_static_prefix %}openlayers/InlineXhtml/lib/OpenLayers/Tile/InlineXhtml.js"></script>
+<script src="{% get_static_prefix %}openlayers/InlineXhtml/lib/OpenLayers/Layer/ScalableInlineXhtml.js"></script>
+
+<style type="text/css">
+    body {
+        padding: 0;
+        margin: 0;
+    }
+
+    .graticule {
+        fill: none;
+        stroke: #777;
+        stroke-width: .5px;
+        stroke-opacity: 1;
+    }
+
+    path.link {
+        stroke: #999;
+        fill-opacity: 0;
+    }
+
+    path.border {
+        stroke: #000000;
+        fill-opacity: 0;
+    }
+
+    label {
+        padding: 10px;
+    }
+</style>
+
+<script type="text/javascript">
+
+    var parsed = true, opacity = 100, graticule, width, height, node, link, borders, fills, projection, inverseProjection, path, svgGraticule, svg, jsongraph, chunk, MINWIDTH = 0, MAXWIDTH = 16, MINFONT = 10, MAXFONT = 16, fontsize;
+    var polygons = [[]];
+    var colors = [];
+    var lines = [[]];
+
+
+    $(document).ready(function () {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        chunk = height / $("#scale").attr("max");
+
+        svg = d3.select("body").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        graticule = d3.geoGraticule();
+
+        projection = d3.geoOrthographic()
+            .scale(height + (chunk * $("#scale").val()))
+            .translate([(width / 2), height / 2])
+            .clipAngle(90);
+
+        inverseProjection = d3.geoEquirectangular()
+            .translate([(width / 2), height / 2])
+            .scale(height / parseFloat($("#inverseScale").val()));
+
+        $("#inverseScale").on("input", function () {
+            inverseProjection.scale(height / parseFloat($("#inverseScale").val()));
+
+            svg.selectAll("path.graticule")
+                .attr("d", path);
+
+            drawGraph(jsongraph);
+            updateLabels();
+        });
+
+        $("#scale").on("input", function () {
+            projection.scale(height + (chunk * $("#scale").val()));
+
+            svg.selectAll("path.graticule")
+                .attr("d", path);
+
+            drawGraph(jsongraph);
+            updateLabels();
+        });
+
+        $("#opacity").on("input", function () {
+            opacity = parseFloat($("#opacity").val());
+            console.log(opacity);
+            drawGraph(jsongraph);
+            updateLabels();
+        });
+
+        document.getElementById("scale").style.visibility = "hidden";
+        document.getElementById("scaleLabel").style.visibility = "hidden";
+        document.getElementById("opacity").style.visibility = "hidden";
+        document.getElementById("opacityLabel").style.visibility = "hidden";
+        document.getElementById("inverseScale").style.visibility = "hidden";
+        document.getElementById("inverseScaleLabel").style.visibility = "hidden";
+
+        path = d3.geoPath()
+            .projection(projection);
+
+        svg.call(d3.drag()
+            .subject(function () {
+                var r = projection.rotate();
+                svgGraticule.attr("d", path);
+                return { x: 2 * r[0], y: -2 * r[1] };
+            })
+            .on("drag", function () {
+                svgGraticule.attr("d", path);
+                var r = [d3.event.x / 2, -d3.event.y / 2, projection.rotate()[2]];
+                projection.rotate(r);
+                drawGraph(jsongraph);
+                updateLabels();
+            }));
+
+        get_map(100);
+    });
+
+    function get_map(delay) {
+        $.ajax({
+            dataType: "json",
+            type: "GET",
+            url: "{% url 'maps:get_task_metadata' task.id %}",
+            async: true,
+            cache: false,
+            timeout: 300000,
+            success: function (task) {
+                if (task.status == 'completed') {
+                    $('#status_indicator').hide();
+                    display_map("{% url 'maps:get_json' task.id %}", task.width, task.height);
+                }
+                else {
+                    $('#status_text').html('Status: ' + task.status);
+                    if (task.status.indexOf("error") != 0)
+                        setTimeout(get_map, delay, Math.min(delay * 2, 5000));
+                    else
+                        $('#status_indicator').hide();
+                }
+            },
+            // handle error
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                //alert(textStatus + " " + errorThrown);
+                // try again in 10 seconds if there was a request error
+                setTimeout(get_map, delay, Math.min(delay * 2, 5000));
+            },
+        });
+    }
+
+    function display_map(map_url, width, height) {
+        $.ajax({
+            dataType: "json",
+            type: "GET",
+            url: map_url,
+            async: true,
+            cache: false,
+            timeout: 300000,
+            success: function (task) {
+                svgGraticule = svg.append("path")
+                    .datum(graticule)
+                    .attr("class", "graticule")
+                    .attr("d", path);
+
+                document.getElementById("scale").style.visibility = "visible";
+                document.getElementById("scaleLabel").style.visibility = "visible";
+                document.getElementById("opacity").style.visibility = "visible";
+                document.getElementById("opacityLabel").style.visibility = "visible";
+                document.getElementById("inverseScale").style.visibility = "visible";
+                document.getElementById("inverseScaleLabel").style.visibility = "visible";
+
+                jsongraph = task;
+                drawGraph(jsongraph);
+                $('#status').hide();
+            },
+            // handle error
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                //alert(textStatus + " " + errorThrown);
+                // try again in 10 seconds if there was a request error
+                setTimeout(display_map, map_url, width, height, delay, Math.min(delay * 2, 5000));
+            },
+        });
+    }
+
+    function drawGraph(graph) {
+        svg.selectAll("path.fills").remove();
+        svg.selectAll("path.link").remove();
+        svg.selectAll("path.node").remove();
+        svg.selectAll("path.border").remove();
+        drawRegions(graph);
+
+        link = svg.selectAll("path.link")
+            .data(graph.links)
+            .enter().append("path").attr("class", "link")
+            .attr("stroke-width", 1)
+            .attr("opacity", opacity);
+
+        node = svg.selectAll("path.node")
+            .data(graph.nodes)
+            .enter().append("path").attr("class", "node")
+            .style("fill", function (d) {
+                if (d.color != null)
+                    return d.color;
+                return d.clustercolor;
+            })
+            .style("stroke", function (d) {
+                if (d.color != null)
+                    return d.color;
+                return d.clustercolor;
+            })
+            .style("stroke-width", function (d) {
+                return Math.max($("#scale").val() * MAXWIDTH / $("#scale").attr("max"), MINWIDTH);
+            })
+            .attr("d", function (d) {
+                var p = path({
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": inverseProjection.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])])
+                    }
+                });
+                return p ? p : 'M 0 0'
+            })
+            .attr("x", function (d) {
+                return projection(inverseProjection.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]))[0];
+            })
+            .attr("y", function (d) {
+                return projection(inverseProjection.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])]))[1] - 5;
+            })
+            .attr("x1", function (d) {
+                return inverseProjection.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])])[0];
+            })
+            .attr("y1", function (d) {
+                return inverseProjection.invert([parseFloat(d.pos.split(',')[0]), parseFloat(d.pos.split(',')[1])])[1];
+            });
+
+        link.attr("d", function (d) {
+            var p = path({
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": [inverseProjection.invert([parseFloat(graph.nodes.find(obj => { return obj.id == d.source }).pos.split(',')[0]), parseFloat(graph.nodes.find(obj => { return obj.id == d.source }).pos.split(',')[1])]), inverseProjection.invert([parseFloat(graph.nodes.find(obj => { return obj.id == d.target }).pos.split(',')[0]), parseFloat(graph.nodes.find(obj => { return obj.id == d.target }).pos.split(',')[1])])]
+                }
+            });
+            return p ? p : 'M 0 0'
+        });
+        updateLabels();
+    }
+
+    function drawRegions(graph) {
+        fills = svg.selectAll("path.fills");
+
+        var regions;
+        var boundingBox;
+        if (graph.graph.graph.bb == null) {
+            boundingBox = graph.graph.graph.bb.split(",");
+        } else{
+            boundingBox = [0, 0];
+        }
+
+        var color;
+        var polygonsIdx = 0;
+        var colorIdx = 0;
+        var lineIdx = 0;
+
+        if (parsed) {
+            regions = graph.graph.graph._background.trim().split(/\s+/);
+            // parse xdot for region info
+            for (var i = 0; i < regions.length; i++) {
+                if (regions[i] == "c") { // following specifies color
+                    i += 2;
+                    colors[colorIdx] = regions[i];
+
+                    if (colors[colorIdx].charAt(0) == '-') { // some color hex's have '-' before
+                        colors[colorIdx] = colors[colorIdx].substring(1);
+                    }
+                    colorIdx++;
+
+                } else if (regions[i] == "P") { // following is a polygon
+                    i++;
+                    var size = parseInt(regions[i]); // number of points in polygon
+
+                    var polygon = regions.slice(i + 1, i + 1 + size * 2);
+
+                    for(var j = 0, k = 1; j < polygon.length - 1; j+=2, k+=2){
+                        polygon[j] += boundingBox[0];
+                        polygon[k] += boundingBox[1];
+                    }
+
+                    polygon = toCounterClockwise(polygon); // this many dimensions for GeoJson polygon coordinates
+                    polygons[polygonsIdx++] = polygon;
+                } else if (regions[i] == "L") { // following is a line border of the polygon
+                    i++;
+                    var size = parseInt(regions[i]);
+
+                    var line = regions.slice(i + 1, i + 1 + size * 2);
+                    lines[lineIdx++] = line;
+                }
+            }
+        }
+        parsed = false;
+
+        for (var i = 0; i < polygons.length; i++) {
+            var poly = [[[]]];
+            var line = [[]];
+
+            // place all points from 2D polygon onto sphere
+            for (var j = 0, k = 0; j < polygons[i].length; j += 2, k++) {
+                // polygons[i][j] = each point's start
+                var pointOnSphere = inverseProjection.invert([polygons[i][j], polygons[i][j + 1]]);
+                poly[0][k] = [pointOnSphere[0], pointOnSphere[1]];
+            }
+            //poly[0] = toCounterClockwise(poly[0]);
+
+            // place all borders from 2D polygons onto sphere
+            for (var j = 0, k = 0; j < lines[i].length; j += 2, k++) {
+                // polygons[i][j] = each point's start
+                var pointOnSphere = inverseProjection.invert([lines[i][j], lines[i][j + 1]]);
+                line[k] = [pointOnSphere[0], pointOnSphere[1]];
+            }
+
+            svg.append("path").attr("class", "fills")
+                .style("fill", function (d) { return colors[i]; })
+                .style("stroke", function (d) { return colors[i]; })
+                .style("opacity", function (d) { return .4; })
+                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Polygon", "coordinates": poly } }); return p; })
+
+            svg.append("path").attr("class", "border")
+                .style("stroke", function (d) { return 0; })
+                .style("opacity", function (d) { return .4; })
+                .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "LineString", "coordinates": line } }); return p; })
+
+        }
+    }
+
+    function updateLabels() {
+        d3.selectAll("text").remove();
+        fontsize = Math.round(Math.max((parseInt($("#scale").val()) + 50) * MAXFONT / parseInt($("#scale").attr("max")), MINFONT));
+
+        node.each(function (d) {
+            var temp = d3.select(this);
+
+            var distance = d3.geoDistance(
+                [temp.attr("x1"), temp.attr("y1")],
+                projection.invert([width / 2, height / 2]));
+
+            if (distance < 1.57079632679490) {
+                if (d.label != null) {
+                    var strings = d.label.split(/\\n/);
+
+                    svg
+                        .append("svg:text")
+                        .text(function (e) {
+                            return strings[0];
+                        })
+                        .attr("x", function (e) {
+                            return temp.attr("x");
+                        })
+                        .attr("y", function (e) {
+                            return temp.attr("y");
+                        })
+                        .attr('fill', 'black')
+                        .attr("font-size", fontsize.toString());
+
+                    for (var i = 1; i < strings.length; i++) {
+                        svg
+                            .append("svg:text")
+                            .text(function (e) {
+                                return strings[i];
+                            })
+                            .attr("x", function (e) {
+                                return temp.attr("x");
+                            })
+                            .attr("y", function (e) {
+                                return parseFloat(temp.attr("y")) + (i * fontsize);
+                            })
+                            .attr('fill', 'black')
+                            .attr("font-size", fontsize.toString());
+                    }
+                } else {
+                    svg
+                        .append("svg:text")
+                        .text(function (e) {
+                            return d.id;
+                        })
+                        .attr("x", function (e) {
+                            return temp.attr("x");
+                        })
+                        .attr("y", function (e) {
+                            return temp.attr("y");
+                        })
+                        .attr("text-anchor", "middle")
+                        .attr('fill', 'black')
+                        .attr("font-size", fontsize.toString());
+                }
+            }
+        })
+    }
+
+    function toCounterClockwise(polygon) {
+        var sum = 0;
+
+        // loop through points and sum edges (x2-x1)(y2+y1)
+        for (var i = 0; i + 3 < polygon.length; i += 2) {
+            sum += (parseFloat(polygon[i + 2]) - parseFloat(polygon[i])) * (parseFloat(polygon[i + 3]) + parseFloat(polygon[i + 1]));
+        }
+        // polygon is counterclockwise else convert
+        if (sum < 0) {
+            return polygon;
+        } else {
+            // flip array by pairs of points e.g. [x1, y1, x2, y2] -> [x2, y2, x1, y1]
+            var result = [];
+            for (var i = polygon.length - 2, j = 0; i >= 0; i -= 2, j += 2) {
+                result[j] = polygon[i]; // x val
+                result[j + 1] = polygon[i + 1]; // y val
+            }
+        }
+        return result
+    }
+
+    function toClockwise(polygon) {
+        var sum = 0;
+
+        // loop through points and sum edges (x2-x1)(y2+y1)
+        for (var i = 0; i + 3 < polygon.length; i += 2) {
+            sum += (parseFloat(polygon[i + 2]) - parseFloat(polygon[i])) * (parseFloat(polygon[i + 3]) + parseFloat(polygon[i + 1]));
+        }
+
+        // polygon is counterclockwise else convert
+        if (sum >= 0) {
+            return polygon; s
+        } else {
+            // flip array by pairs of points e.g. [x1, y1, x2, y2] -> [x2, y2, x1, y1]
+            var result = [];
+            for (var i = polygon.length - 2, j = 0; i >= 0; i -= 2, j += 2) {
+                result[j] = polygon[i]; // x val
+                result[j + 1] = polygon[i + 1]; // y val
+            }
+        }
+        return result
+    }
+
+</script>
+{% endblock %}
+{% block content %}
+<label for="scale" id="scaleLabel">Zoom</label>
+<input type="range" min="-90" max="100" value="-50" class="slider" id="scale"/>
+<label for="inverseScale" id="inverseScaleLabel">Coverage</label>
+<input type="range" min="0.1" max="5" value="0.5" step="0.05" class="slider" id="inverseScale"/>
+<label for="opacity" id="opacityLabel">Edge Opacity</label>
+<input type="range" min="0" max="1" value="1" step="0.01" class="slider" id="opacity"/>
+<div id="status" class="status">
+    <img id="status_indicator" src="{% get_static_prefix %}img/load_indicator.gif" width="16px" height="16px">
+    <span id="status_text">Status: loading</span>
+</div>
+{% endblock %}

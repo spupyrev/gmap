@@ -19,7 +19,7 @@ def graphviz_command_layout(alg='sfdp'):
     return "%s -Goverlap=prism -Goutputorder=edgesfirst -Gsize=60,60!" % (alg)
 
 def graphviz_command_gmap(color_scheme):
-    if color_scheme == 'bubble-sets' or color_scheme == "graph":
+    if color_scheme == 'bubble-sets':
     	return "gvmap -e  -s -4"
     return "gvmap -e  -s -4 -c %s" % (color_scheme)
 
@@ -187,9 +187,9 @@ def call_graphviz_int(task):
     	dot_out = run_layout(task, layout_algorithm, map_string)
     	dot_out = run_clustering(task, cluster_algorithm, dot_out)
     	# running ceba
-    	if not cluster_algorithm.startswith('cont-'):
-    		set_status(task, 'making map contiguous')
-    		dot_out = call_process(ceba_command(), dot_out)
+    	#if not cluster_algorithm.startswith('cont-'):
+    	#	set_status(task, 'making map contiguous')
+    	#	dot_out = call_process(ceba_command(), dot_out)
 
     	set_status(task, 'creating map sets')
     	#log.debug('MapSets-Input: %s' %(dot_out))

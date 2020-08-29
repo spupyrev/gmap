@@ -56,14 +56,17 @@ void AddDummyVerticesAlongTreeEdges(DotGraph& g, const map<string, SegmentSet*>&
 
 	ClosestPointQP cp(g.GetBoundingBox());
 	map<Point, string> point2Cluster;
+	map<string, string> cluster2ClusterColor;
 	for (int i = 0; i < (int)g.nodes.size(); i++)
 	{
 		if (g.nodes[i]->IsDummy()) continue;
 
 		Point p = g.nodes[i]->getPos();
 		string clusterId = g.nodes[i]->getCluster();
+		string clusterColor = g.nodes[i]->getClusterColor();
 		cp.addPoint(p);
 		point2Cluster[p] = clusterId;
+		cluster2ClusterColor[clusterId] = clusterColor;
 
 		vector<Segment> boundary = g.nodes[i]->getBoundary(1.0);
 		for (int j = 0; j < (int)boundary.size(); j++)
@@ -83,6 +86,7 @@ void AddDummyVerticesAlongTreeEdges(DotGraph& g, const map<string, SegmentSet*>&
 	for (auto iter = trees.begin(); iter != trees.end(); iter++)
 	{
 		string clusterId = (*iter).first;
+		string clusterColor = cluster2ClusterColor[clusterId];
 		SegmentSet* tree = (*iter).second;
 
 		for (int i = 0; i < tree->count(); i++)
@@ -105,7 +109,7 @@ void AddDummyVerticesAlongTreeEdges(DotGraph& g, const map<string, SegmentSet*>&
 
 				double F = 1.5;
 				p += Point::RandomPoint(-F, F, -F, F);
-				g.AddDummyPoint(p, clusterId);
+				g.AddDummyPoint(p, clusterId, clusterColor);
 			}
 		}
 	}
@@ -149,7 +153,7 @@ void AddDummyVerticesAlongTreeEdges(DotGraph& g, const map<string, SegmentSet*>&
 				//adding the point
 				double F = 1.5;
 				p += Point::RandomPoint(-F, F, -F, F);
-				g.AddDummyPoint(p, clusterId);
+				g.AddDummyPoint(p, clusterId, "");
 
 				cp.addPoint(p);
 				point2Cluster[p] = clusterId;
@@ -187,7 +191,7 @@ void AddDummyVerticesAlongLabels(DotGraph& g)
 				Point rnd = Point::RandomPoint(-rc*w, rc*w, -rc*h, rc*h);
 				p += rnd;
 
-				g.AddDummyPoint(p, g.nodes[i]->getCluster());
+				g.AddDummyPoint(p, g.nodes[i]->getCluster(), g.nodes[i]->getClusterColor());
 			}
 		}
 

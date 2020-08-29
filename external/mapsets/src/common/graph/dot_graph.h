@@ -43,6 +43,13 @@ public:
 		return getAttr("cluster");
 	}
 
+	string getClusterColor()
+	{
+		if (hasAttr("clustercolor"))
+			return getAttr("clustercolor");
+		return "";
+	}
+
 	#define SCALE 52.0
 
 	double getWidth()
@@ -200,7 +207,7 @@ public:
 	map<pair<DotNode*, DotNode*>, int> shortestPaths;
 	map<pair<DotNode*, DotNode*>, double> shortestPathsW;
 
-	void AddDummyPoint(const Point& pos, const string& clusterId)
+	void AddDummyPoint(const Point& pos, const string& clusterId, const string& clusterColor)
 	{
 		DotNode* nn = new DotNode(nodes.size());
 
@@ -212,6 +219,8 @@ public:
 		ss << pos.x << "," << pos.y;
 		nn->attr["pos"] = ss.str();
 		nn->setAttr("cluster", clusterId);
+		if (clusterColor != "")
+			nn->setAttr("clustercolor", clusterColor);
 		nn->setAttr("height", "0.0");
 		nn->setAttr("width", "0.0");
 		nn->setAttr("shape", "point");

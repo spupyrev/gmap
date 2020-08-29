@@ -19,7 +19,7 @@ def graphviz_command_layout(alg='sfdp'):
     return "%s -Goverlap=prism -Goutputorder=edgesfirst -Gsize=60,60!" % (alg)
 
 def graphviz_command_gmap(color_scheme):
-    if color_scheme == 'bubble-sets':
+    if color_scheme == 'bubble-sets' or color_scheme == "graph":
     	return "gvmap -e  -s -4"
     return "gvmap -e  -s -4 -c %s" % (color_scheme)
 
@@ -120,7 +120,6 @@ def run_color_assignment(task, dot_out):
 	set_status(task, 'assigning colors')
 	return call_process(colors_command(), dot_out)
 
-import time
 def call_graphviz_int(task):
     map_string = task.input_dot
     vis_type = task.vis_type
@@ -137,25 +136,17 @@ def call_graphviz_int(task):
     	#default pipeline
     	dot_out = run_layout(task, layout_algorithm, map_string)
     	dot_out = run_clustering(task, cluster_algorithm, dot_out)
-
-    	start = time.time()
-    	set_status(task, 'map construction')
     	dot_out = call_process(graphviz_command_gmap(task.color_scheme), dot_out)
-    	#log.debug('Input: %s' %(dot_out))
     	if task.color_scheme == 'bubble-sets':
     		dot_out = run_color_assignment(task, dot_out)
 
-    	end = time.time()
-    	print ('running time: ' + str(end-start))
-
+    	set_status(task, 'map construction')
     	svg_out = get_graphviz_map(dot_out, 'svg')
     	return dot_out, svg_out
 
     elif vis_type == 'point-cloud':
     	dot_out = run_layout(task, layout_algorithm, map_string)
     	dot_out = run_clustering(task, cluster_algorithm, dot_out)
-
-    	set_status(task, 'coloring')
     	dot_out = call_process(graphviz_command_gmap(task.color_scheme), dot_out)
     	if task.color_scheme == 'bubble-sets':
     		dot_out = run_color_assignment(task, dot_out)
@@ -204,6 +195,8 @@ def call_graphviz_int(task):
     	#log.debug('MapSets-Input: %s' %(dot_out))
     	dot_out = call_process(mapsets_command(), dot_out)
     	dot_out = call_process(mapsets_post_command(task.color_scheme), dot_out)
+    	if task.color_scheme == 'bubble-sets':
+    		dot_out = run_color_assignment(task, dot_out)
 
     	svg_out = get_graphviz_map(dot_out, 'svg')
     	return dot_out, svg_out

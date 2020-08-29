@@ -121,7 +121,7 @@ private:
 		for (int i = 1; i < (int)points.size(); i++)
 		{
 			vector<Segment> path;
-			bool success = ExtractPathToReal(visGraph, parent, 0, i, path);
+			ExtractPathToReal(visGraph, parent, 0, i, path);
 			//assert(success);
 
 			for (int j = 0; j < (int)path.size(); j++)

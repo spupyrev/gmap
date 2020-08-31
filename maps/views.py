@@ -6,7 +6,13 @@ from lib.interface import CallExternalException
 from maps.models import Task
 import thread
 import time
+import json
+import pygraphviz
 from time import strftime
+from networkx.readwrite import json_graph
+from networkx.drawing import nx_agraph
+from lib.sphere_mds import dot_to_adjacency_matrix
+from lib.sphere_mds import testMDS
 
 def index(request):
 	return render(request, 'maps/index.html')
@@ -72,10 +78,27 @@ MIME_TYPES = {
     'gv':  'text/plain',
 }
 
+def get_json(request, task_id):
+	if request.method == 'GET':
+		task = Task.objects.get(id = task_id)
+		dot_graph = nx_agraph.from_agraph(pygraphviz.AGraph(task.dot_rep))
+  		graph_json = json.dumps(json_graph.node_link_data(dot_graph))
+		return HttpResponse(graph_json, content_type='application/json')
+def get_adjacency_matrix(request, task_id):
+	if request.method == 'POST':
+		task = Task.objects.get(id = task_id)
+		print dot_to_adjacency_matrix(pygraphviz.AGraph(task.dot_rep))
+
+def get_mds(request):
+	return HttpResponse(json.dumps(testMDS()), content_type='application/json')
+
+
 def display_map(request, task_id, format = ''):
 	if request.method == 'GET':
 		task = get_object_safe(task_id, 10)
 		if format == '':
+			if task.contiguous_algorithm == 'true':
+				return render(request, 'maps/spherical.html', {'task': task})
 			return render(request, 'maps/map.html', {'task': task})
 		else:
 			if format in MIME_TYPES:

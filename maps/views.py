@@ -9,13 +9,15 @@ import time
 import json
 import pygraphviz
 from time import strftime
+import networkx as nx
 from networkx.readwrite import json_graph
 from networkx.drawing import nx_agraph
-from lib.sphere_mds import dot_to_adjacency_matrix
-from lib.sphere_mds import testMDS
 
 def index(request):
 	return render(request, 'maps/index.html')
+
+def test(request):
+	return render(request, 'maps/sphericalTest.html')
 
 def description(request):
 	return render(request, 'description.html')
@@ -78,21 +80,6 @@ MIME_TYPES = {
     'gv':  'text/plain',
 }
 
-def get_json(request, task_id):
-	if request.method == 'GET':
-		task = Task.objects.get(id = task_id)
-		dot_graph = nx_agraph.from_agraph(pygraphviz.AGraph(task.dot_rep))
-  		graph_json = json.dumps(json_graph.node_link_data(dot_graph))
-		return HttpResponse(graph_json, content_type='application/json')
-def get_adjacency_matrix(request, task_id):
-	if request.method == 'POST':
-		task = Task.objects.get(id = task_id)
-		print dot_to_adjacency_matrix(pygraphviz.AGraph(task.dot_rep))
-
-def get_mds(request):
-	return HttpResponse(json.dumps(testMDS()), content_type='application/json')
-
-
 def display_map(request, task_id, format = ''):
 	if request.method == 'GET':
 		task = get_object_safe(task_id, 10)
@@ -109,8 +96,23 @@ def display_map(request, task_id, format = ''):
 			elif format == 'input_desc':
 				return HttpResponse(task.description(), 'text/plain')
 
-def get_task_metadata(request, task_id):
+def get_json(request, task_id):
 	if request.method == 'GET':
+		task = Task.objects.get(id = task_id)
+		dot_graph = nx_agraph.from_agraph(pygraphviz.AGraph(task.dot_rep))
+  		graph_json = json.dumps(json_graph.node_link_data(dot_graph))
+		return HttpResponse(graph_json, content_type='application/json')
+
+#def get_adjacency_matrix(request, task_id):
+#	if request.method == 'POST':
+#		task = Task.objects.get(id = task_id)
+#		print dot_to_adjacency_matrix(pygraphviz.AGraph(task.dot_rep))
+
+#def get_mds(request):
+#	return HttpResponse(json.dumps(testMDS()), content_type='application/json')
+
+def get_task_metadata(request, task_id):
+    if request.method == 'GET':
 		task = Task.objects.get(id = task_id)
 		return HttpResponse(task.json_metadata(), content_type='application/json')
     

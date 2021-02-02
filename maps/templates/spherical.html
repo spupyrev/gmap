@@ -92,6 +92,7 @@
 
         $("#opacity").on("input", function () {
             opacity = parseFloat($("#opacity").val());
+            console.log(opacity);
             drawGraph(jsongraph);
             updateLabels();
         });
@@ -132,7 +133,7 @@
             cache: false,
             timeout: 300000,
             success: function (task) {
-              if (task.status == 'completed') {
+                if (task.status == 'completed') {
                     $('#status_indicator').hide();
                     display_map("{% url 'maps:get_json' task.id %}", task.width, task.height);
                 }
@@ -192,7 +193,6 @@
         svg.selectAll("path.link").remove();
         svg.selectAll("path.node").remove();
         svg.selectAll("path.border").remove();
-        if (typeof graph.graph.graph._background != "undefined")
         drawRegions(graph);
 
         link = svg.selectAll("path.link")
@@ -202,7 +202,7 @@
             .attr("opacity", opacity);
 
         node = svg.selectAll("path.node")
-            .data(graph.nodes.filter( function(item){ return item.style != "invis";}))
+            .data(graph.nodes)
             .enter().append("path").attr("class", "node")
             .style("fill", function (d) {
                 if (d.color != null)
@@ -257,6 +257,12 @@
         fills = svg.selectAll("path.fills");
 
         var regions;
+        var boundingBox;
+        if (graph.graph.graph.bb == null) {
+            boundingBox = graph.graph.graph.bb.split(",");
+        } else{
+            boundingBox = [0, 0];
+        }
 
         var color;
         var polygonsIdx = 0;
@@ -282,6 +288,11 @@
 
                     var polygon = regions.slice(i + 1, i + 1 + size * 2);
 
+                    for(var j = 0, k = 1; j < polygon.length - 1; j+=2, k+=2){
+                        polygon[j] += boundingBox[0];
+                        polygon[k] += boundingBox[1];
+                    }
+
                     polygon = toCounterClockwise(polygon); // this many dimensions for GeoJson polygon coordinates
                     polygons[polygonsIdx++] = polygon;
                 } else if (regions[i] == "L") { // following is a line border of the polygon
@@ -294,47 +305,37 @@
             }
         }
         parsed = false;
-        var l;
-if (polygons.length > lines.length)
-   l = polygons.length;
-else
-   l = lines.length;
 
-        for (var i = 0; i < l; i++) {
+        for (var i = 0; i < polygons.length; i++) {
             var poly = [[[]]];
             var line = [[]];
-if (typeof polygons[i] != "undefined"){
+
             // place all points from 2D polygon onto sphere
             for (var j = 0, k = 0; j < polygons[i].length; j += 2, k++) {
                 // polygons[i][j] = each point's start
                 var pointOnSphere = inverseProjection.invert([polygons[i][j], polygons[i][j + 1]]);
                 poly[0][k] = [pointOnSphere[0], pointOnSphere[1]];
             }
-}
             //poly[0] = toCounterClockwise(poly[0]);
- if(typeof lines[i] != "undefined") {
+
             // place all borders from 2D polygons onto sphere
             for (var j = 0, k = 0; j < lines[i].length; j += 2, k++) {
                 // polygons[i][j] = each point's start
                 var pointOnSphere = inverseProjection.invert([lines[i][j], lines[i][j + 1]]);
                 line[k] = [pointOnSphere[0], pointOnSphere[1]];
             }
-}
 
-if (typeof polygons[i] != "undefined" && polygons[i].length > 0){
             svg.append("path").attr("class", "fills")
                 .style("fill", function (d) { return colors[i]; })
                 .style("stroke", function (d) { return colors[i]; })
                 .style("opacity", function (d) { return .4; })
                 .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "Polygon", "coordinates": poly } }); return p; })
-}
-console.log(lines[i]);
-if (typeof lines[i] != "undefined"){
+
             svg.append("path").attr("class", "border")
                 .style("stroke", function (d) { return 0; })
                 .style("opacity", function (d) { return .4; })
                 .attr("d", function (d) { var p = path({ "type": "Feature", "geometry": { "type": "LineString", "coordinates": line } }); return p; })
-}
+
         }
     }
 

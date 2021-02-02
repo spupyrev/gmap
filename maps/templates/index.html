@@ -117,7 +117,7 @@ function toggleAdvanced(first_load) {
 						<option value="map-sets">Map Sets</option>
 						<option value="bubble-sets">Bubble Sets</option>
 						<option value="line-sets">Line Sets</option>
-						
+						<option value="spherical">Spherical</option>
 					</select><br>
 
 					<label for='layout_algorithm' class="labelAdvanced">Layout Algorithm:</label>
@@ -134,15 +134,14 @@ function toggleAdvanced(first_load) {
 							<option value="modularity">modularity</option>
 							<option value="k-means">k-means</option>
 							<option value="hierarchical">hierarchical</option>
-							<option value="graph">use graph setting</option>
 						</optgroup>
 						<optgroup label="contiguous">
 							<option value="cont-infomap">infomap</option>
 							<option value="cont-modularity">modularity</option>
 							<option value="cont-k-means" selected='selected'>k-means</option>
 							<option value="cont-hierarchical">hierarchical</option>
-							<option value="cont-graph">use graph setting</option>
 						</optgroup>
+						<option value="graph">use graph setting</option>
 					</select><br>
 				</div>
 
@@ -165,8 +164,6 @@ function toggleAdvanced(first_load) {
 
 					<label for='semantic_zoom' class="labelAdvanced">Semantic Zoom:</label>
 					<input type="checkbox" name="semantic_zoom" value="true" /><br>
-					<label for='spherical' class="labelAdvanced">Spherical:</label>
-					<input type="checkbox" name="spherical" value="true" /><br>
 				</div>
 			</fieldset>
 		</div>
